@@ -3,6 +3,7 @@
 import React from "react";
 import Link from "next/link";
 import Image from "next/image";
+import { usePathname } from "next/navigation";
 import {
   HiOutlinePhone,
   HiOutlineMail,
@@ -45,6 +46,12 @@ const socialLinks = [
 ];
 
 export default function Footer() {
+  const pathname = usePathname();
+
+  if (pathname.startsWith("/dashboard")) {
+    return null;
+  }
+
   return (
     <footer className="w-full bg-slate-950 text-slate-300 font-sans relative pt-16 sm:pt-20 pb-10 overflow-hidden border-t border-slate-800">
       {/* Subtle Ambient Background Lighting */}

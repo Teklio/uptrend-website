@@ -3,6 +3,7 @@
 import React, { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
+import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import {
   HiOutlineUser,
@@ -13,14 +14,17 @@ import {
   HiOutlineSparkles,
 } from "react-icons/hi";
 import Input from "@/components/Input";
+import { useAuth } from "@/context/AuthContext";
 
 export default function SignupPage() {
+  const router = useRouter();
+  const { login } = useAuth();
   const [formData, setFormData] = useState({
     fullName: "",
     email: "",
     password: "",
     confirmPassword: "",
-    agreeTerms: false,
+    agreeTerms: true,
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -51,9 +55,10 @@ export default function SignupPage() {
 
     setLoading(true);
     setTimeout(() => {
+      login(formData.email, formData.fullName);
       setLoading(false);
-      alert("Demo: Account created successfully for " + formData.fullName);
-    }, 1000);
+      router.push("/dashboard");
+    }, 800);
   };
 
   return (

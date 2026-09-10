@@ -2,9 +2,11 @@
 
 import React, { useState, useEffect } from "react";
 import Image from "next/image";
+import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { CourseDetail } from "@/data/courses";
-import { HiOutlineArrowLeft, HiX, HiCheckCircle } from "react-icons/hi";
+import { HiOutlineArrowLeft, HiX, HiCheckCircle, HiOutlinePlay, HiOutlineArrowRight } from "react-icons/hi";
+import { useAuth } from "@/context/AuthContext";
 
 interface CheckoutDrawerProps {
   course: CourseDetail | null;
@@ -41,11 +43,13 @@ export default function CheckoutDrawer({
   onClose,
   initialStep = "order",
 }: CheckoutDrawerProps) {
+  const router = useRouter();
+  const { enrollInCourse, updateProfile } = useAuth();
   const [step, setStep] = useState<"order" | "billing" | "success">(initialStep);
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
-  const [state, setState] = useState("Tamil Nadu");
+  const [state, setState] = useState("Kerala");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [orderId, setOrderId] = useState("");
 
@@ -88,9 +92,22 @@ export default function CheckoutDrawer({
     setIsSubmitting(true);
     setTimeout(() => {
       setIsSubmitting(false);
-      setOrderId("UPT-" + Math.floor(100000 + Math.random() * 900000));
+      const generatedOrderId = "UPT-" + Math.floor(100000 + Math.random() * 900000);
+      setOrderId(generatedOrderId);
+      enrollInCourse(course.slug, course.totalPrice);
+      updateProfile({ name, email, phone, city: state });
       setStep("success");
     }, 1200);
+  };
+
+  const handleGoToCourseVideos = () => {
+    onClose();
+    router.push(`/dashboard/courses/${course.slug}`);
+  };
+
+  const handleGoToDashboard = () => {
+    onClose();
+    router.push("/dashboard");
   };
 
   return (
@@ -358,13 +375,33 @@ export default function CheckoutDrawer({
                     <span className="font-medium text-slate-700">{email}</span>.
                   </p>
 
-                  <button
-                    type="button"
-                    onClick={onClose}
-                    className="w-full py-3 rounded-lg bg-blue-600 text-white font-bold text-sm hover:bg-blue-700 transition-colors shadow-md"
-                  >
-                    Done & Return
-                  </button>
+                  <div className="space-y-2.5 pt-2">
+                    <button
+                      type="button"
+                      onClick={handleGoToCourseVideos}
+                      className="w-full py-3.5 px-4 rounded-xl bg-gradient-to-r from-brand-gold via-amber-400 to-brand-gold text-slate-950 font-bold text-sm hover:from-amber-400 hover:to-brand-gold transition-all shadow-md flex items-center justify-center gap-2 cursor-pointer"
+                    >
+                      <HiOutlinePlay className="text-lg" />
+                      <span>Start Learning Course Videos</span>
+                      <HiOutlineArrowRight className="text-sm" />
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={handleGoToDashboard}
+                      className="w-full py-3 rounded-xl bg-brand-navy hover:bg-slate-900 text-white font-semibold text-sm transition-colors shadow-sm cursor-pointer"
+                    >
+                      Go to Student Dashboard
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={onClose}
+                      className="w-full py-2.5 text-xs text-slate-500 hover:text-slate-800 font-medium transition-colors"
+                    >
+                      Close & Return to Page
+                    </button>
+                  </div>
                 </motion.div>
               )}
             </div>

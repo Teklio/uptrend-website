@@ -6,7 +6,7 @@ import Image from "next/image";
 import { motion } from "framer-motion";
 import { HiOutlineArrowRight } from "react-icons/hi";
 import { FiTrendingUp, FiTarget, FiLayers, FiCpu } from "react-icons/fi";
-import { BsCurrencyBitcoin, BsCurrencyExchange } from "react-icons/bs";
+import { BsCurrencyExchange } from "react-icons/bs";
 import { TbChartCandle } from "react-icons/tb";
 
 const features = [
@@ -72,29 +72,34 @@ export default function Hero() {
 
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative">
                 {/* 4 Large Glowing Circular Trading Orbs - Positioned & Contained for Large & Small Screens */}
-                {/* 1. Top-Left: Bitcoin / Crypto Orb */}
+                {/* 1. Top-Left: Gold / XAU USD Orb */}
                 <motion.div
                     animate={{
-                        y: [0, -14, 0],
-                        scale: [1, 1.04, 1],
+                        y: [0, -10, 0],
+                        scale: [1, 1.03, 1],
                     }}
                     transition={{
                         duration: 5.5,
                         repeat: Infinity,
                         ease: "easeInOut",
                     }}
-                    className="absolute top-0 sm:top-4 left-0 sm:left-2 lg:left-6 z-10 flex items-center justify-center w-14 h-14 sm:w-20 sm:h-20 md:w-24 md:h-24 rounded-full bg-[#001c54]/90 backdrop-blur-xl border-2 border-brand-gold p-1.5 shadow-[0_0_30px_rgba(245,163,0,0.45)]"
+                    className="absolute top-1 sm:top-4 left-2 sm:left-4 lg:left-6 z-10 flex items-center justify-center w-10 h-10 sm:w-20 sm:h-20 md:w-24 md:h-24 rounded-full bg-[#001c54]/90 backdrop-blur-xl border border-brand-gold sm:border-2 p-1 sm:p-1.5 shadow-[0_0_20px_rgba(245,163,0,0.35)]"
                 >
-                    <div className="w-full h-full rounded-full border border-brand-gold/50 flex items-center justify-center bg-gradient-to-b from-brand-navy via-[#001c54] to-slate-950 text-brand-gold">
-                        <BsCurrencyBitcoin className="text-2xl sm:text-3xl md:text-4xl drop-shadow-[0_0_12px_rgba(245,163,0,0.85)]" />
+                    <div className="w-full h-full rounded-full border border-brand-gold/40 flex flex-col items-center justify-center bg-gradient-to-b from-brand-navy via-[#001c54] to-slate-950 text-brand-gold select-none">
+                        <span className="text-[8px] sm:text-xs md:text-sm font-black tracking-wider text-brand-gold drop-shadow-[0_0_10px_rgba(245,163,0,0.9)] font-mono leading-none">
+                            XAU
+                        </span>
+                        <span className="text-[6px] sm:text-[9px] md:text-[10px] font-extrabold text-amber-200 tracking-widest leading-tight mt-0.5">
+                            USD
+                        </span>
                     </div>
                 </motion.div>
 
                 {/* 2. Top-Right: Currency Exchange Orb */}
                 <motion.div
                     animate={{
-                        y: [0, 14, 0],
-                        scale: [1, 1.04, 1],
+                        y: [0, 10, 0],
+                        scale: [1, 1.03, 1],
                     }}
                     transition={{
                         duration: 6.5,
@@ -102,18 +107,18 @@ export default function Hero() {
                         ease: "easeInOut",
                         delay: 0.6,
                     }}
-                    className="absolute top-0 sm:top-4 right-0 sm:right-2 lg:right-6 z-10 flex items-center justify-center w-14 h-14 sm:w-20 sm:h-20 md:w-24 md:h-24 rounded-full bg-[#001c54]/90 backdrop-blur-xl border-2 border-brand-gold p-1.5 shadow-[0_0_30px_rgba(245,163,0,0.45)]"
+                    className="absolute top-1 sm:top-4 right-2 sm:right-4 lg:right-6 z-10 flex items-center justify-center w-10 h-10 sm:w-20 sm:h-20 md:w-24 md:h-24 rounded-full bg-[#001c54]/90 backdrop-blur-xl border border-brand-gold sm:border-2 p-1 sm:p-1.5 shadow-[0_0_20px_rgba(245,163,0,0.35)]"
                 >
-                    <div className="w-full h-full rounded-full border border-brand-gold/50 flex items-center justify-center bg-gradient-to-b from-brand-navy via-[#001c54] to-slate-950 text-brand-gold">
-                        <BsCurrencyExchange className="text-2xl sm:text-3xl md:text-4xl drop-shadow-[0_0_12px_rgba(245,163,0,0.85)]" />
+                    <div className="w-full h-full rounded-full border border-brand-gold/40 flex items-center justify-center bg-gradient-to-b from-brand-navy via-[#001c54] to-slate-950 text-brand-gold">
+                        <BsCurrencyExchange className="text-base sm:text-3xl md:text-4xl drop-shadow-[0_0_10px_rgba(245,163,0,0.85)]" />
                     </div>
                 </motion.div>
 
                 {/* 3. Mid-Left: Uptrend Chart Orb */}
                 <motion.div
                     animate={{
-                        y: [0, -12, 0],
-                        scale: [1, 1.04, 1],
+                        y: [0, -10, 0],
+                        scale: [1, 1.03, 1],
                     }}
                     transition={{
                         duration: 6,
@@ -121,18 +126,18 @@ export default function Hero() {
                         ease: "easeInOut",
                         delay: 1.2,
                     }}
-                    className="absolute top-[40%] sm:top-[38%] -left-2 sm:left-0 lg:left-4 z-10 flex items-center justify-center w-14 h-14 sm:w-20 sm:h-20 md:w-24 md:h-24 rounded-full bg-[#001c54]/90 backdrop-blur-xl border-2 border-brand-gold p-1.5 shadow-[0_0_30px_rgba(245,163,0,0.45)]"
+                    className="absolute top-[38%] sm:top-[38%] left-2 sm:left-3 lg:left-4 z-10 flex items-center justify-center w-10 h-10 sm:w-20 sm:h-20 md:w-24 md:h-24 rounded-full bg-[#001c54]/90 backdrop-blur-xl border border-brand-gold sm:border-2 p-1 sm:p-1.5 shadow-[0_0_20px_rgba(245,163,0,0.35)]"
                 >
-                    <div className="w-full h-full rounded-full border border-brand-gold/50 flex items-center justify-center bg-gradient-to-b from-brand-navy via-[#001c54] to-slate-950 text-brand-gold">
-                        <FiTrendingUp className="text-2xl sm:text-3xl md:text-4xl drop-shadow-[0_0_12px_rgba(245,163,0,0.85)]" />
+                    <div className="w-full h-full rounded-full border border-brand-gold/40 flex items-center justify-center bg-gradient-to-b from-brand-navy via-[#001c54] to-slate-950 text-brand-gold">
+                        <FiTrendingUp className="text-base sm:text-3xl md:text-4xl drop-shadow-[0_0_10px_rgba(245,163,0,0.85)]" />
                     </div>
                 </motion.div>
 
                 {/* 4. Mid-Right: Candlestick Pattern Orb */}
                 <motion.div
                     animate={{
-                        y: [0, 12, 0],
-                        scale: [1, 1.04, 1],
+                        y: [0, 10, 0],
+                        scale: [1, 1.03, 1],
                     }}
                     transition={{
                         duration: 7,
@@ -140,10 +145,10 @@ export default function Hero() {
                         ease: "easeInOut",
                         delay: 1.8,
                     }}
-                    className="absolute top-[40%] sm:top-[38%] -right-2 sm:right-0 lg:right-4 z-10 flex items-center justify-center w-14 h-14 sm:w-20 sm:h-20 md:w-24 md:h-24 rounded-full bg-[#001c54]/90 backdrop-blur-xl border-2 border-brand-gold p-1.5 shadow-[0_0_30px_rgba(245,163,0,0.45)]"
+                    className="absolute top-[38%] sm:top-[38%] right-2 sm:right-3 lg:right-4 z-10 flex items-center justify-center w-10 h-10 sm:w-20 sm:h-20 md:w-24 md:h-24 rounded-full bg-[#001c54]/90 backdrop-blur-xl border border-brand-gold sm:border-2 p-1 sm:p-1.5 shadow-[0_0_20px_rgba(245,163,0,0.35)]"
                 >
-                    <div className="w-full h-full rounded-full border border-brand-gold/50 flex items-center justify-center bg-gradient-to-b from-brand-navy via-[#001c54] to-slate-950 text-brand-gold">
-                        <TbChartCandle className="text-2xl sm:text-3xl md:text-4xl drop-shadow-[0_0_12px_rgba(245,163,0,0.85)]" />
+                    <div className="w-full h-full rounded-full border border-brand-gold/40 flex items-center justify-center bg-gradient-to-b from-brand-navy via-[#001c54] to-slate-950 text-brand-gold">
+                        <TbChartCandle className="text-base sm:text-3xl md:text-4xl drop-shadow-[0_0_10px_rgba(245,163,0,0.85)]" />
                     </div>
                 </motion.div>
 

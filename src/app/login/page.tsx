@@ -3,17 +3,20 @@
 import React, { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
+import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import {
   HiOutlineMail,
   HiOutlineLockClosed,
   HiOutlineArrowRight,
-  HiOutlineSparkles,
   HiOutlineShieldCheck,
 } from "react-icons/hi";
 import Input from "@/components/Input";
+import { useAuth } from "@/context/AuthContext";
 
 export default function LoginPage() {
+  const router = useRouter();
+  const { login } = useAuth();
   const [formData, setFormData] = useState({
     email: "",
     password: "",
@@ -32,11 +35,11 @@ export default function LoginPage() {
     }
 
     setLoading(true);
-    // Simulate auth action
     setTimeout(() => {
+      login(formData.email);
       setLoading(false);
-      alert("Demo: Login submitted for " + formData.email);
-    }, 1000);
+      router.push("/dashboard");
+    }, 600);
   };
 
   return (
@@ -71,7 +74,7 @@ export default function LoginPage() {
             </Link>
 
             <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-950 tracking-tight">
-              Secure Login
+             Uptrend Login
             </h1>
             <p className="text-xs sm:text-sm text-slate-500 mt-2">
               Access your structured trading curriculum, live webinars, and risk frameworks.
@@ -136,8 +139,8 @@ export default function LoginPage() {
               disabled={loading}
               className="group relative w-full inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-xl text-sm font-bold text-slate-950 bg-gradient-to-r from-brand-gold via-amber-400 to-brand-gold hover:from-amber-400 hover:to-brand-gold shadow-md shadow-brand-gold/25 transition-all duration-200 hover:scale-[1.01] active:scale-[0.99] disabled:opacity-60 cursor-pointer overflow-hidden mt-2"
             >
-              <span>{loading ? "Signing in..." : "Login to Portal"}</span>
-              <HiOutlineArrowRight className="text-sm transition-transform duration-200 group-hover:translate-x-1" />
+              <span className="text-sm md:text-lg">{loading ? "Signing in..." : "Login"}</span>
+              <HiOutlineArrowRight className="text-sm md:text-lg transition-transform duration-200 group-hover:translate-x-1" />
 
               {/* Shimmer */}
               <div className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/40 to-transparent group-hover:animate-[shimmer_1.5s_infinite]" />

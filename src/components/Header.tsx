@@ -10,7 +10,9 @@ import {
   HiOutlineArrowRight,
   HiOutlineSparkles,
   HiXMark,
+  HiOutlineAcademicCap,
 } from "react-icons/hi2";
+import { useAuth } from "@/context/AuthContext";
 
 interface NavItem {
   name: string;
@@ -27,6 +29,7 @@ const navItems: NavItem[] = [
 ];
 
 export default function Header() {
+  const { isLoggedIn, user } = useAuth();
   const [isScrolled, setIsScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
@@ -55,6 +58,11 @@ export default function Header() {
       document.body.style.overflow = "";
     };
   }, [mobileMenuOpen]);
+
+  // Hide header completely on dashboard screens
+  if (pathname.startsWith("/dashboard")) {
+    return null;
+  }
 
   return (
     <>
@@ -149,14 +157,27 @@ export default function Header() {
 
             {/* Right Action Buttons */}
             <div className="hidden sm:flex items-center gap-3.5">
-              {/* Login Button */}
-              <Link
-                href="/login"
-                className="group relative flex items-center gap-2 px-5 py-2.5 text-[15px] font-semibold text-slate-700 hover:text-brand-navy transition-all duration-200 rounded-full hover:bg-slate-100/80"
-              >
-                <HiOutlineUser className="text-lg text-slate-400 group-hover:text-brand-navy transition-colors" />
-                <span>Login</span>
-              </Link>
+              {/* Dashboard / Login Button */}
+              {isLoggedIn ? (
+                <Link
+                  href="/dashboard"
+                  className="group relative flex items-center gap-2.5 px-4 py-2 text-sm font-bold text-slate-800 hover:text-brand-navy bg-slate-100 hover:bg-slate-200/80 border border-slate-200 rounded-full transition-all duration-200"
+                >
+                  <div className="w-6 h-6 rounded-full bg-brand-navy text-brand-gold flex items-center justify-center font-bold text-xs shadow-inner">
+                    {user?.name ? user.name.charAt(0).toUpperCase() : "U"}
+                  </div>
+                  <span className="font-semibold text-xs tracking-tight">Dashboard</span>
+                  <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                </Link>
+              ) : (
+                <Link
+                  href="/login"
+                  className="group relative flex items-center gap-2 px-5 py-2.5 text-[15px] font-semibold text-slate-700 hover:text-brand-navy transition-all duration-200 rounded-full hover:bg-slate-100/80"
+                >
+                  <HiOutlineUser className="text-lg text-slate-400 group-hover:text-brand-navy transition-colors" />
+                  <span>Login</span>
+                </Link>
+              )}
 
               {/* Minimal Premium CTA Button */}
               <Link
@@ -179,11 +200,17 @@ export default function Header() {
             {/* Mobile / Tablet Menu Button */}
             <div className="flex lg:hidden items-center gap-2.5">
               <Link
-                href="/login"
-                aria-label="Login"
+                href={isLoggedIn ? "/dashboard" : "/login"}
+                aria-label="Dashboard / Login"
                 className="p-2.5 text-slate-600 hover:text-brand-navy hover:bg-slate-100 rounded-full transition-colors sm:hidden"
               >
-                <HiOutlineUser className="w-6 h-6" />
+                {isLoggedIn ? (
+                  <div className="w-7 h-7 rounded-full bg-brand-navy text-brand-gold flex items-center justify-center font-bold text-xs">
+                    {user?.name ? user.name.charAt(0).toUpperCase() : "U"}
+                  </div>
+                ) : (
+                  <HiOutlineUser className="w-6 h-6" />
+                )}
               </Link>
 
               <button

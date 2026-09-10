@@ -54,6 +54,8 @@ export const metadata: Metadata = {
   },
 };
 
+import { AuthProvider } from "@/context/AuthContext";
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -65,10 +67,12 @@ export default function RootLayout({
       className={`${poppins.variable} font-sans h-full antialiased`}
     >
       <body className="min-h-full flex flex-col bg-white text-slate-900 font-sans">
-        <Header />
-        <main className="flex-1">{children}</main>
-        <Footer />
-        <StickyContact />
+        <AuthProvider>
+          <Header />
+          <main className="flex-1">{children}</main>
+          <Footer />
+          <StickyContact />
+        </AuthProvider>
       </body>
     </html>
   );
