@@ -187,7 +187,7 @@ export default function CheckoutFlow({ course, isOpen, onClose }: CheckoutFlowPr
                     )}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <h3 className="text-xs font-semibold text-slate-900 line-clamp-2 leading-tight">{course.name}</h3>
+                    <h3 className="text-xs font-semibold text-slate-900 line-clamp-2 leading-tight wrap-break-word">{course.name}</h3>
                     <p className="text-sm font-bold text-blue-600 mt-0.5">₹{course.price.toLocaleString("en-IN")}</p>
                   </div>
                 </div>
@@ -308,7 +308,7 @@ export default function CheckoutFlow({ course, isOpen, onClose }: CheckoutFlowPr
                     <HiCheckCircle className="w-10 h-10" />
                   </div>
                   <h3 className="text-xl font-bold text-slate-900">Enrollment Successful!</h3>
-                  <p className="text-xs text-slate-600 leading-relaxed max-w-xs mx-auto">
+                  <p className="text-xs text-slate-600 leading-relaxed max-w-xs mx-auto wrap-break-word">
                     Your seat for <span className="font-bold text-slate-900">{course.name}</span> has been confirmed.
                   </p>
 

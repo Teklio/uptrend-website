@@ -54,8 +54,8 @@ function EnrollmentContent() {
             {courses.map((course) => (
               <div key={course.id} className="bg-white rounded-2xl border border-slate-200/90 shadow-sm p-5 flex flex-col justify-between">
                 <div>
-                  <h3 className="text-sm sm:text-base font-semibold text-slate-900 mb-2 line-clamp-2">{course.name}</h3>
-                  <p className="text-xs text-slate-500 mb-3">{course.mentorName}</p>
+                  <h3 className="text-sm sm:text-base font-semibold text-slate-900 mb-2 line-clamp-2 wrap-break-word">{course.name}</h3>
+                  <p className="text-xs text-slate-500 mb-3 truncate">{course.mentorName}</p>
                   <p className="text-lg font-bold text-emerald-700 mb-4">₹{course.price.toLocaleString("en-IN")}</p>
                 </div>
                 <button

@@ -97,13 +97,13 @@ export default function CoursesPage() {
                   {/* Body Content */}
                   <div className="p-5 flex-1 flex flex-col justify-between">
                     <div>
-                      <h2 className="text-sm sm:text-base font-semibold text-slate-900 line-clamp-2 leading-snug group-hover:text-blue-600 transition-colors mb-3">
+                      <h2 className="text-sm sm:text-base font-semibold text-slate-900 line-clamp-2 leading-snug group-hover:text-blue-600 transition-colors mb-3 wrap-break-word">
                         {course.name}
                       </h2>
                     </div>
 
                     <div className="pt-2">
-                      <p className="text-xs text-slate-500 font-medium mb-1">{course.mentorName}</p>
+                      <p className="text-xs text-slate-500 font-medium mb-1 truncate">{course.mentorName}</p>
 
                       <div className="flex items-center gap-2">
                         {course.actualPrice > course.price && (

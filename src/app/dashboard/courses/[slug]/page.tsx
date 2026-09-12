@@ -27,11 +27,11 @@ const formatDuration = (seconds: number | null) => {
 
 function NowPlayingBars() {
   return (
-    <div className="flex items-end gap-[2px] h-3">
+    <div className="flex items-end gap-0.5 h-3">
       {[0, 1, 2].map((i) => (
         <span
           key={i}
-          className="w-[2.5px] bg-white rounded-full animate-[nowplaying_1s_ease-in-out_infinite]"
+          className="w-0.5 bg-white rounded-full animate-[nowplaying_1s_ease-in-out_infinite]"
           style={{ animationDelay: `${i * 0.15}s`, height: "100%" }}
         />
       ))}
@@ -58,19 +58,19 @@ function PlaylistRow({
         isSelected ? "bg-slate-900" : "hover:bg-slate-50"
       }`}
     >
-      <div className="relative w-[72px] h-[42px] sm:w-20 sm:h-[46px] rounded-lg overflow-hidden shrink-0 bg-slate-800 border border-slate-200/60">
+      <div className="relative w-18 aspect-video sm:w-20 rounded-lg overflow-hidden shrink-0 bg-slate-800 border border-slate-200/60">
         {video.thumbnailUrl ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img src={video.thumbnailUrl} alt="" className="w-full h-full object-cover" />
         ) : (
-          <div className="w-full h-full bg-gradient-to-br from-slate-700 to-slate-900" />
+          <div className="w-full h-full bg-linear-to-br from-slate-700 to-slate-900" />
         )}
         <div className={`absolute inset-0 flex items-center justify-center ${isSelected ? "bg-slate-950/50" : "bg-slate-950/25"}`}>
           {isSelected ? (
             <NowPlayingBars />
           ) : video.isCompleted ? (
             <div className="w-5 h-5 rounded-full bg-emerald-500 text-white flex items-center justify-center">
-              <FiCheck className="w-3 h-3 stroke-[3]" />
+              <FiCheck className="w-3 h-3 stroke-3" />
             </div>
           ) : (
             <HiOutlinePlay className="text-white text-lg drop-shadow" />
@@ -82,11 +82,11 @@ function PlaylistRow({
       </div>
 
       <div className="min-w-0 flex-1 pt-0.5">
-        <p className={`text-xs font-semibold leading-snug line-clamp-2 ${isSelected ? "text-white" : "text-slate-800"}`}>
+        <p className={`text-xs font-semibold leading-snug line-clamp-2 wrap-break-word ${isSelected ? "text-white" : "text-slate-800"}`}>
           {index}. {video.title}
         </p>
         {video.description && (
-          <p className={`text-[11px] leading-snug line-clamp-2 mt-1 ${isSelected ? "text-slate-300" : "text-slate-400"}`}>
+          <p className={`text-[11px] leading-snug line-clamp-2 wrap-break-word mt-1 ${isSelected ? "text-slate-300" : "text-slate-400"}`}>
             {video.description}
           </p>
         )}
@@ -98,6 +98,33 @@ function PlaylistRow({
         </div>
       )}
     </button>
+  );
+}
+
+function VideoPlayer({ videoId }: { videoId: string }) {
+  const [playback, setPlayback] = useState<VideoPlayback | null>(null);
+
+  useEffect(() => {
+    getVideoPlayback(videoId)
+      .then(setPlayback)
+      .catch(() => setPlayback(null));
+  }, [videoId]);
+
+  if (!playback) {
+    return (
+      <div className="absolute inset-0 flex items-center justify-center">
+        <div className="w-8 h-8 rounded-full border-2 border-white/30 border-t-white animate-spin" />
+      </div>
+    );
+  }
+
+  return (
+    <iframe
+      src={playback.embedUrl}
+      className="w-full h-full"
+      allow="accelerometer; gyroscope; autoplay; encrypted-media; picture-in-picture"
+      allowFullScreen
+    />
   );
 }
 
@@ -126,8 +153,8 @@ function ModulePanel({
         className="w-full px-4 py-3.5 flex items-start justify-between gap-3 text-left hover:bg-slate-50 transition-colors cursor-pointer"
       >
         <div className="min-w-0">
-          <h3 className="text-[13px] font-bold text-slate-900 leading-snug">{mod.title}</h3>
-          {mod.description && <p className="text-[11px] text-slate-500 leading-snug mt-1 line-clamp-2">{mod.description}</p>}
+          <h3 className="text-[13px] font-bold text-slate-900 leading-snug wrap-break-word">{mod.title}</h3>
+          {mod.description && <p className="text-[11px] text-slate-500 leading-snug mt-1 line-clamp-2 wrap-break-word">{mod.description}</p>}
           <div className="flex items-center gap-2 mt-1.5">
             <div className="w-16 h-1 rounded-full bg-slate-200 overflow-hidden">
               <div
@@ -168,18 +195,23 @@ function ModulePanel({
 
 export default function CourseVideoLearningPage({ params }: PageProps) {
   const { slug: courseId } = use(params);
+  // Keying on courseId forces a full remount when navigating between courses,
+  // so `loading`/`activeVideoId` etc. reset to their initial values naturally
+  // instead of needing a manual setState(true) reset at the top of an effect.
+  return <CourseLearningView key={courseId} courseId={courseId} />;
+}
 
+function CourseLearningView({ courseId }: { courseId: string }) {
   const [course, setCourse] = useState<EnrolledCourseDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState("");
   const [activeVideoId, setActiveVideoId] = useState<string | null>(null);
-  const [playback, setPlayback] = useState<VideoPlayback | null>(null);
   const [marking, setMarking] = useState(false);
   const [openModules, setOpenModules] = useState<Record<string, boolean>>({});
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [mobilePlaylistOpen, setMobilePlaylistOpen] = useState(false);
 
-  const loadCourse = useCallback(async () => {
+  const refreshCourse = useCallback(async () => {
     try {
       const data = await getEnrolledCourse(courseId);
       setCourse(data);
@@ -198,20 +230,31 @@ export default function CourseVideoLearningPage({ params }: PageProps) {
   }, [courseId]);
 
   useEffect(() => {
-    setLoading(true);
-    loadCourse().then((data) => {
-      if (data) setActiveVideoId(data.continueVideoId ?? data.modules[0]?.videos[0]?.id ?? null);
-      setLoading(false);
-    });
-  }, [loadCourse]);
+    let ignore = false;
+    getEnrolledCourse(courseId)
+      .then((data) => {
+        if (ignore) return;
+        setCourse(data);
+        setOpenModules((prev) => {
+          const next = { ...prev };
+          data.modules.forEach((m) => {
+            if (!(m.id in next)) next[m.id] = true;
+          });
+          return next;
+        });
+        setActiveVideoId(data.continueVideoId ?? data.modules[0]?.videos[0]?.id ?? null);
+        setLoading(false);
+      })
+      .catch((err) => {
+        if (ignore) return;
+        setLoadError(err instanceof ApiError ? err.message : "Could not load this course.");
+        setLoading(false);
+      });
 
-  useEffect(() => {
-    if (!activeVideoId) return;
-    setPlayback(null);
-    getVideoPlayback(activeVideoId)
-      .then(setPlayback)
-      .catch(() => setPlayback(null));
-  }, [activeVideoId]);
+    return () => {
+      ignore = true;
+    };
+  }, [courseId]);
 
   if (loading) {
     return (
@@ -274,7 +317,7 @@ export default function CourseVideoLearningPage({ params }: PageProps) {
         watchedSeconds: activeVideo.durationSeconds ?? 0,
         completed: true,
       });
-      await loadCourse();
+      await refreshCourse();
     } finally {
       setMarking(false);
     }
@@ -288,7 +331,7 @@ export default function CourseVideoLearningPage({ params }: PageProps) {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-900 flex flex-col font-sans">
+    <div className="min-h-screen bg-slate-50 text-slate-900 flex flex-col font-sans overflow-x-hidden">
       <style>{`@keyframes nowplaying { 0%, 100% { height: 30%; } 50% { height: 100%; } }`}</style>
 
       {/* TOP HEADER */}
@@ -302,10 +345,10 @@ export default function CourseVideoLearningPage({ params }: PageProps) {
             <span className="hidden sm:inline">Dashboard</span>
           </Link>
 
-          <div className="h-4 w-[1px] bg-slate-200 hidden sm:block" />
+          <div className="h-4 w-px bg-slate-200 hidden sm:block" />
 
           <div className="min-w-0">
-            <h1 className="text-xs sm:text-sm font-bold text-slate-900 truncate max-w-[160px] sm:max-w-md lg:max-w-xl">{course.name}</h1>
+            <h1 className="text-xs sm:text-sm font-bold text-slate-900 truncate max-w-40 sm:max-w-md lg:max-w-xl">{course.name}</h1>
             <p className="text-[11px] text-slate-500 truncate hidden md:block">
               {activeModule?.title} &bull; {activeVideo?.title}
             </p>
@@ -333,7 +376,7 @@ export default function CourseVideoLearningPage({ params }: PageProps) {
             isSidebarCollapsed ? "w-0 overflow-hidden border-r-0" : "w-80 xl:w-88"
           }`}
         >
-          <div className="p-4 border-b border-slate-100 min-w-[320px]">
+          <div className="p-4 border-b border-slate-100 min-w-80">
             <div className="flex items-center justify-between mb-2">
               <h2 className="text-xs font-bold uppercase tracking-wider text-slate-700">Course Content</h2>
               <span className="text-[11px] font-bold text-slate-500">
@@ -348,7 +391,7 @@ export default function CourseVideoLearningPage({ params }: PageProps) {
             </div>
           </div>
 
-          <div className="flex-1 overflow-y-auto divide-y divide-slate-100 min-w-[320px]">
+          <div className="flex-1 overflow-y-auto divide-y divide-slate-100 min-w-80">
             {course.modules.map((mod) => (
               <ModulePanel
                 key={mod.id}
@@ -366,7 +409,7 @@ export default function CourseVideoLearningPage({ params }: PageProps) {
           type="button"
           onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
           className={`hidden lg:flex fixed top-1/2 -translate-y-1/2 z-30 w-8 h-8 bg-white border border-slate-300 rounded-full shadow-lg items-center justify-center text-slate-700 hover:text-slate-950 hover:bg-slate-100 transition-all duration-300 cursor-pointer hover:scale-110 ${
-            isSidebarCollapsed ? "left-4" : "left-[304px] xl:left-[336px]"
+            isSidebarCollapsed ? "left-4" : "left-76 xl:left-84"
           }`}
           aria-label="Toggle Sidebar"
         >
@@ -377,25 +420,13 @@ export default function CourseVideoLearningPage({ params }: PageProps) {
         <main className="flex-1 overflow-y-auto p-3 sm:p-6 lg:p-8">
           <div className={`mx-auto space-y-4 sm:space-y-6 transition-all duration-300 ${isSidebarCollapsed ? "max-w-6xl" : "max-w-4xl"}`}>
             <div className="bg-black rounded-xl sm:rounded-2xl overflow-hidden shadow-lg relative aspect-video w-full">
-              {playback ? (
-                <iframe
-                  key={playback.videoId}
-                  src={playback.embedUrl}
-                  className="w-full h-full"
-                  allow="accelerometer; gyroscope; autoplay; encrypted-media; picture-in-picture"
-                  allowFullScreen
-                />
-              ) : (
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <div className="w-8 h-8 rounded-full border-2 border-white/30 border-t-white animate-spin" />
-                </div>
-              )}
+              {activeVideoId && <VideoPlayer key={activeVideoId} videoId={activeVideoId} />}
             </div>
 
             <div className="bg-white rounded-xl sm:rounded-2xl border border-slate-200 shadow-sm">
               <div className="px-4 py-3 sm:px-5 sm:py-3.5">
-                <div className="flex items-center justify-between gap-2">
-                  <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wide truncate">
+                <div className="flex items-center justify-between gap-2 min-w-0">
+                  <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wide truncate min-w-0">
                     {activeModule?.title} &bull; Lesson {currentIndex + 1} of {allItems.length}
                   </span>
                   {activeVideo?.isCompleted && (
@@ -405,9 +436,9 @@ export default function CourseVideoLearningPage({ params }: PageProps) {
                     </span>
                   )}
                 </div>
-                <h2 className="text-sm sm:text-base font-bold text-slate-900 mt-1 leading-snug">{activeVideo?.title}</h2>
+                <h2 className="text-sm sm:text-base font-bold text-slate-900 mt-1 leading-snug wrap-break-word">{activeVideo?.title}</h2>
                 {activeVideo?.description && (
-                  <p className="text-xs sm:text-sm text-slate-500 leading-relaxed mt-1.5 max-w-2xl">{activeVideo.description}</p>
+                  <p className="text-xs sm:text-sm text-slate-500 leading-relaxed mt-1.5 max-w-2xl wrap-break-word">{activeVideo.description}</p>
                 )}
               </div>
 

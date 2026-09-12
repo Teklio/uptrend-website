@@ -105,7 +105,7 @@ export default function CourseDetailPage({ params }: PageProps) {
   }
 
   return (
-    <div className="min-h-screen bg-[#f3f4f6]/60 text-slate-900 pb-28">
+    <div className="min-h-screen bg-[#f3f4f6]/60 text-slate-900 pb-28 overflow-x-hidden">
       {/* Top Breadcrumb Bar */}
       <div className="bg-white border-b border-slate-200">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 py-3.5 flex items-center justify-between text-xs sm:text-sm">
@@ -142,7 +142,7 @@ export default function CourseDetailPage({ params }: PageProps) {
             initial={{ opacity: 0, y: 15 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.1 }}
-            className="text-2xl sm:text-4xl md:text-5xl font-black text-[#0f172a] tracking-tight leading-tight max-w-3xl mx-auto"
+            className="text-2xl sm:text-4xl md:text-5xl font-black text-[#0f172a] tracking-tight leading-tight max-w-3xl mx-auto wrap-break-word"
           >
             {course.name}
           </motion.h1>
@@ -152,7 +152,7 @@ export default function CourseDetailPage({ params }: PageProps) {
               initial={{ opacity: 0, y: 15 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, delay: 0.15 }}
-              className="text-base sm:text-lg text-slate-700 font-medium max-w-2xl mx-auto leading-relaxed"
+              className="text-base sm:text-lg text-slate-700 font-medium max-w-2xl mx-auto leading-relaxed wrap-break-word"
             >
               {course.description}
             </motion.p>
@@ -187,17 +187,17 @@ export default function CourseDetailPage({ params }: PageProps) {
 
           <div className="flex flex-wrap items-center justify-center gap-4 sm:gap-8 text-xs sm:text-sm font-semibold text-blue-700">
             {course.mentorName && (
-              <span className="inline-flex items-center gap-1.5">
-                <HiOutlineUser className="text-base text-blue-600" />
-                <span>Instructor: {course.mentorName}</span>
+              <span className="inline-flex items-center gap-1.5 max-w-full min-w-0">
+                <HiOutlineUser className="text-base text-blue-600 shrink-0" />
+                <span className="wrap-break-word min-w-0">Instructor: {course.mentorName}</span>
               </span>
             )}
             {course.language && (
               <>
                 <span className="text-slate-300 hidden sm:inline">•</span>
-                <span className="inline-flex items-center gap-1.5">
-                  <HiOutlineGlobeAlt className="text-base text-blue-600" />
-                  <span>Language: {course.language}</span>
+                <span className="inline-flex items-center gap-1.5 max-w-full min-w-0">
+                  <HiOutlineGlobeAlt className="text-base text-blue-600 shrink-0" />
+                  <span className="wrap-break-word min-w-0">Language: {course.language}</span>
                 </span>
               </>
             )}
@@ -211,13 +211,13 @@ export default function CourseDetailPage({ params }: PageProps) {
               <h2 className="text-2xl sm:text-3xl font-black text-[#0f172a] tracking-tight">What you'll get</h2>
             </div>
             <div className="bg-white rounded-2xl p-6 sm:p-8 shadow-sm border border-slate-200/90">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className={`grid grid-cols-1 gap-4 ${course.features.length > 1 ? "sm:grid-cols-2" : ""}`}>
                 {course.features.map((feature, idx) => (
-                  <div key={idx} className="flex items-start gap-3.5 p-4 rounded-xl bg-slate-50/80 border border-slate-200/70">
+                  <div key={idx} className="flex items-start gap-3.5 p-4 rounded-xl bg-slate-50/80 border border-slate-200/70 min-w-0">
                     <div className="w-6 h-6 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center flex-shrink-0 mt-0.5">
                       <FiCheckCircle className="w-4 h-4" />
                     </div>
-                    <span className="text-sm font-semibold text-slate-800 leading-snug">{feature}</span>
+                    <span className="text-sm font-semibold text-slate-800 leading-snug wrap-break-word min-w-0">{feature}</span>
                   </div>
                 ))}
               </div>
@@ -256,9 +256,9 @@ export default function CourseDetailPage({ params }: PageProps) {
                         {idx + 1}
                       </div>
                       <div className="flex-1 min-w-0">
-                        <h3 className="text-base sm:text-lg font-bold text-slate-900 mb-1">{courseModule.title}</h3>
+                        <h3 className="text-base sm:text-lg font-bold text-slate-900 mb-1 wrap-break-word">{courseModule.title}</h3>
                         {courseModule.description && (
-                          <p className="text-sm text-slate-600 leading-relaxed">{courseModule.description}</p>
+                          <p className="text-sm text-slate-600 leading-relaxed wrap-break-word">{courseModule.description}</p>
                         )}
                         <div className="flex items-center gap-3 mt-2 text-xs font-medium text-slate-400">
                           <span>
@@ -287,8 +287,8 @@ export default function CourseDetailPage({ params }: PageProps) {
                           <div key={video.id} className="flex items-start gap-3.5 px-5 sm:px-6 py-4 pl-[4.25rem] sm:pl-[4.75rem]">
                             <FiPlayCircle className="w-4 h-4 text-slate-300 flex-shrink-0 mt-0.5" />
                             <div className="flex-1 min-w-0">
-                              <div className="flex items-center justify-between gap-3">
-                                <span className="text-sm font-semibold text-slate-800">
+                              <div className="flex items-start justify-between gap-3">
+                                <span className="text-sm font-semibold text-slate-800 wrap-break-word min-w-0">
                                   {vIdx + 1}. {video.title}
                                 </span>
                                 {video.durationSeconds != null && (
@@ -299,7 +299,7 @@ export default function CourseDetailPage({ params }: PageProps) {
                                 )}
                               </div>
                               {video.description && (
-                                <p className="text-xs sm:text-[13px] text-slate-500 leading-relaxed mt-1">
+                                <p className="text-xs sm:text-[13px] text-slate-500 leading-relaxed mt-1 wrap-break-word">
                                   {video.description}
                                 </p>
                               )}
@@ -331,11 +331,11 @@ export default function CourseDetailPage({ params }: PageProps) {
                         <HiStar key={i} className="w-4 h-4 fill-current" />
                       ))}
                     </div>
-                    {review.comment && <p className="text-sm text-slate-700 italic leading-relaxed mb-4">&quot;{review.comment}&quot;</p>}
+                    {review.comment && <p className="text-sm text-slate-700 italic leading-relaxed mb-4 wrap-break-word">&quot;{review.comment}&quot;</p>}
                   </div>
-                  <div className="pt-3 border-t border-slate-100 flex items-center justify-between text-xs">
-                    <span className="font-bold text-slate-900">{review.user.name || "Student"}</span>
-                    <span className="text-slate-400 font-medium">{new Date(review.createdAt).toLocaleDateString("en-IN")}</span>
+                  <div className="pt-3 border-t border-slate-100 flex items-center justify-between gap-2 text-xs">
+                    <span className="font-bold text-slate-900 truncate min-w-0">{review.user.name || "Student"}</span>
+                    <span className="text-slate-400 font-medium shrink-0">{new Date(review.createdAt).toLocaleDateString("en-IN")}</span>
                   </div>
                 </div>
               ))}
@@ -385,7 +385,7 @@ export default function CourseDetailPage({ params }: PageProps) {
               <span className="inline-block px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-brand-gold/20 text-brand-gold border border-brand-gold/30">
                 Limited Cohort Seats
               </span>
-              <h3 className="text-2xl sm:text-3xl font-black text-white">Ready to start {course.name}?</h3>
+              <h3 className="text-2xl sm:text-3xl font-black text-white wrap-break-word">Ready to start {course.name}?</h3>
               <div className="pt-2">
                 <button
                   type="button"

@@ -71,7 +71,7 @@ export default function CertificateModal({ isOpen, onClose, certificate }: Certi
         </div>
 
         <div className="p-8 text-center space-y-4">
-          <h3 className="text-base font-bold text-slate-900">{certificate.courseName}</h3>
+          <h3 className="text-base font-bold text-slate-900 wrap-break-word">{certificate.courseName}</h3>
 
           {error && <p className="text-xs font-medium text-red-600">{error}</p>}
 

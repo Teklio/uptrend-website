@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -25,6 +25,10 @@ import {
   HiOutlineArrowLeft,
   HiOutlineMenu,
   HiOutlineEye,
+  HiOutlineEyeOff,
+  HiOutlinePencilAlt,
+  HiOutlineLockClosed,
+  HiOutlineChevronDown,
   HiX,
 } from "react-icons/hi";
 
@@ -44,15 +48,23 @@ export default function DashboardPage() {
 
   const [profileForm, setProfileForm] = useState({ name: "", phone: "", state: "" });
   const [passwordForm, setPasswordForm] = useState({ currentPassword: "", newPassword: "" });
-  const [saveSuccess, setSaveSuccess] = useState(false);
-  const [passwordSuccess, setPasswordSuccess] = useState(false);
   const [profileError, setProfileError] = useState("");
   const [passwordError, setPasswordError] = useState("");
+  const [isEditingProfile, setIsEditingProfile] = useState(false);
+  const [isPasswordSectionOpen, setIsPasswordSectionOpen] = useState(false);
+  const [showCurrentPassword, setShowCurrentPassword] = useState(false);
+  const [showNewPassword, setShowNewPassword] = useState(false);
 
-  useEffect(() => {
-    if (!user) return;
-    setProfileForm({ name: user.name ?? "", phone: user.phone ?? "", state: user.state ?? "" });
-  }, [user]);
+  const [toast, setToast] = useState<string | null>(null);
+  const toastTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const showToast = (message: string) => {
+    if (toastTimeoutRef.current) clearTimeout(toastTimeoutRef.current);
+    setToast(message);
+    toastTimeoutRef.current = setTimeout(() => setToast(null), 3500);
+  };
+  useEffect(() => () => {
+    if (toastTimeoutRef.current) clearTimeout(toastTimeoutRef.current);
+  }, []);
 
   useEffect(() => {
     listEnrolledCourses({ limit: 50 })
@@ -73,11 +85,22 @@ export default function DashboardPage() {
     setProfileError("");
     try {
       await authService.updateProfile(profileForm);
-      setSaveSuccess(true);
-      setTimeout(() => setSaveSuccess(false), 3000);
+      setIsEditingProfile(false);
+      showToast("Profile updated successfully!");
     } catch (err) {
       setProfileError(err instanceof ApiError ? err.message : "Could not update profile.");
     }
+  };
+
+  const handleStartEditProfile = () => {
+    setProfileForm({ name: user.name ?? "", phone: user.phone ?? "", state: user.state ?? "" });
+    setProfileError("");
+    setIsEditingProfile(true);
+  };
+
+  const handleCancelProfileEdit = () => {
+    setProfileError("");
+    setIsEditingProfile(false);
   };
 
   const handlePasswordSubmit = async (e: React.FormEvent) => {
@@ -85,9 +108,11 @@ export default function DashboardPage() {
     setPasswordError("");
     try {
       await authService.changePassword(passwordForm);
-      setPasswordSuccess(true);
       setPasswordForm({ currentPassword: "", newPassword: "" });
-      setTimeout(() => setPasswordSuccess(false), 3000);
+      setShowCurrentPassword(false);
+      setShowNewPassword(false);
+      setIsPasswordSectionOpen(false);
+      showToast("Password changed successfully!");
     } catch (err) {
       setPasswordError(err instanceof ApiError ? err.message : "Could not change password.");
     }
@@ -223,11 +248,31 @@ export default function DashboardPage() {
 
       <CertificateModal isOpen={Boolean(selectedCertificate)} onClose={() => setSelectedCertificate(null)} certificate={selectedCertificate} />
 
+      <style>{`@keyframes toastIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }`}</style>
+      {toast && (
+        <div
+          role="status"
+          className="fixed bottom-5 inset-x-4 sm:inset-x-auto sm:right-5 sm:max-w-sm z-100 flex items-center gap-2.5 px-4 py-3.5 rounded-xl shadow-lg bg-emerald-600 text-white text-sm font-bold"
+          style={{ animation: "toastIn 0.25s ease-out" }}
+        >
+          <HiOutlineCheckCircle className="text-lg shrink-0" />
+          <span className="flex-1">{toast}</span>
+          <button
+            type="button"
+            onClick={() => setToast(null)}
+            className="text-white/70 hover:text-white shrink-0 cursor-pointer"
+            aria-label="Dismiss"
+          >
+            <HiX className="text-base" />
+          </button>
+        </div>
+      )}
+
       <main className="flex-1 bg-white p-6 sm:p-10 lg:p-12 overflow-y-auto">
         <div className="max-w-5xl mx-auto space-y-8">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-slate-100">
-            <div>
-              <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
+            <div className="min-w-0">
+              <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight wrap-break-word">
                 {activeTab === "dashboard" && `Welcome, ${user.name || "Student"} 👋`}
                 {activeTab === "certification" && "Course Certifications"}
                 {activeTab === "profile" && "Profile Management"}
@@ -273,7 +318,7 @@ export default function DashboardPage() {
                         className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm hover:shadow-md transition-shadow flex flex-col justify-between"
                       >
                         <div>
-                          <div className="relative aspect-[16/9] w-full bg-slate-100">
+                          <div className="relative aspect-video w-full bg-slate-100">
                             {course.primaryImageUrl && (
                               // eslint-disable-next-line @next/next/no-img-element
                               <img src={course.primaryImageUrl} alt={course.name} className="w-full h-full object-cover" />
@@ -281,9 +326,9 @@ export default function DashboardPage() {
                           </div>
 
                           <div className="p-5 space-y-3">
-                            <h3 className="text-base font-bold text-slate-900 leading-snug">{course.name}</h3>
+                            <h3 className="text-base font-bold text-slate-900 leading-snug line-clamp-2 wrap-break-word">{course.name}</h3>
                             {course.mentorName && (
-                              <p className="text-xs text-slate-500">
+                              <p className="text-xs text-slate-500 truncate">
                                 Mentor: <span className="font-semibold text-slate-700">{course.mentorName}</span>
                               </p>
                             )}
@@ -336,8 +381,8 @@ export default function DashboardPage() {
                       <tbody className="divide-y divide-slate-100">
                         {payments.map((payment) => (
                           <tr key={payment.id}>
-                            <td className="px-4 py-3 font-semibold text-slate-800">{payment.course.name}</td>
-                            <td className="px-4 py-3 text-slate-700">₹{payment.totalAmount.toLocaleString("en-IN")}</td>
+                            <td className="px-4 py-3 font-semibold text-slate-800 max-w-56 wrap-break-word">{payment.course.name}</td>
+                            <td className="px-4 py-3 text-slate-700 whitespace-nowrap">₹{payment.totalAmount.toLocaleString("en-IN")}</td>
                             <td className="px-4 py-3">
                               <span
                                 className={`px-2 py-0.5 rounded-full text-[11px] font-bold ${
@@ -373,11 +418,11 @@ export default function DashboardPage() {
                     key={course.id}
                     className="p-6 rounded-2xl border border-slate-200 flex flex-col md:flex-row md:items-center justify-between gap-5 bg-white shadow-sm hover:shadow-md transition-shadow"
                   >
-                    <div className="space-y-2">
-                      <span className="px-2.5 py-0.5 rounded-md bg-amber-50 border border-amber-200 text-brand-gold-dark text-[10px] font-bold uppercase tracking-wider">
+                    <div className="space-y-2 min-w-0">
+                      <span className="inline-block px-2.5 py-0.5 rounded-md bg-amber-50 border border-amber-200 text-brand-gold-dark text-[10px] font-bold uppercase tracking-wider">
                         {course.progressPercent}% complete
                       </span>
-                      <h3 className="text-base sm:text-lg font-bold text-slate-900">{course.name}</h3>
+                      <h3 className="text-base sm:text-lg font-bold text-slate-900 wrap-break-word">{course.name}</h3>
                     </div>
 
                     <div className="flex items-center gap-2.5 shrink-0">
@@ -400,110 +445,191 @@ export default function DashboardPage() {
 
           {/* TAB 3: PROFILE */}
           {activeTab === "profile" && (
-            <div className="space-y-10 max-w-lg">
-              <div className="space-y-4">
-                {saveSuccess && (
-                  <div className="p-3.5 rounded-xl bg-emerald-50 border border-emerald-200 text-xs font-bold text-emerald-700 flex items-center gap-2">
-                    <HiOutlineCheckCircle className="text-base" />
-                    <span>Profile updated successfully!</span>
-                  </div>
-                )}
-                {profileError && <p className="text-xs font-medium text-red-600">{profileError}</p>}
-
-                <form onSubmit={handleProfileSubmit} className="space-y-4">
-                  <div>
-                    <label className="block text-xs font-bold text-slate-700 mb-1.5">Full Name</label>
-                    <input
-                      type="text"
-                      required
-                      value={profileForm.name}
-                      onChange={(e) => setProfileForm({ ...profileForm, name: e.target.value })}
-                      className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm text-slate-900 bg-white focus:outline-none focus:ring-2 focus:ring-slate-900"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-bold text-slate-700 mb-1.5">Email Address</label>
-                    <input
-                      type="email"
-                      disabled
-                      value={user.email}
-                      className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm text-slate-500 bg-slate-50"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-bold text-slate-700 mb-1.5">Phone Number</label>
-                    <input
-                      type="tel"
-                      value={profileForm.phone}
-                      onChange={(e) => setProfileForm({ ...profileForm, phone: e.target.value })}
-                      className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm text-slate-900 bg-white focus:outline-none focus:ring-2 focus:ring-slate-900"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-bold text-slate-700 mb-1.5">State</label>
-                    <select
-                      value={profileForm.state}
-                      onChange={(e) => setProfileForm({ ...profileForm, state: e.target.value })}
-                      className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm text-slate-900 bg-white focus:outline-none focus:ring-2 focus:ring-slate-900"
+            <div className="space-y-5 max-w-lg">
+              {/* PERSONAL DETAILS — read-only by default, minimal edit affordance */}
+              <div className="rounded-2xl border border-slate-200 bg-white overflow-hidden">
+                <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100">
+                  <h2 className="text-sm font-bold text-slate-900">Personal Details</h2>
+                  {!isEditingProfile && (
+                    <button
+                      type="button"
+                      onClick={handleStartEditProfile}
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 transition-colors cursor-pointer"
                     >
-                      <option value="">Select state</option>
-                      {states.map((s) => (
-                        <option key={s.id} value={s.name}>
-                          {s.name}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-
-                  <div className="pt-2">
-                    <button type="submit" className="px-6 py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs sm:text-sm transition-colors cursor-pointer">
-                      Save Changes
+                      <HiOutlinePencilAlt className="text-sm" />
+                      <span>Edit</span>
                     </button>
-                  </div>
-                </form>
+                  )}
+                </div>
+
+                <div className="p-5">
+                  {profileError && <p className="mb-4 text-xs font-medium text-red-600">{profileError}</p>}
+
+                  {!isEditingProfile ? (
+                    <dl className="space-y-4">
+                      <div className="flex items-center justify-between gap-4">
+                        <dt className="text-xs font-semibold text-slate-500">Full Name</dt>
+                        <dd className="text-sm font-semibold text-slate-900 text-right truncate">{user.name || "—"}</dd>
+                      </div>
+                      <div className="flex items-center justify-between gap-4">
+                        <dt className="text-xs font-semibold text-slate-500">Email Address</dt>
+                        <dd className="text-sm font-semibold text-slate-900 text-right truncate">{user.email}</dd>
+                      </div>
+                      <div className="flex items-center justify-between gap-4">
+                        <dt className="text-xs font-semibold text-slate-500">Phone Number</dt>
+                        <dd className="text-sm font-semibold text-slate-900 text-right truncate">{user.phone || "—"}</dd>
+                      </div>
+                      <div className="flex items-center justify-between gap-4">
+                        <dt className="text-xs font-semibold text-slate-500">State</dt>
+                        <dd className="text-sm font-semibold text-slate-900 text-right truncate">{user.state || "—"}</dd>
+                      </div>
+                    </dl>
+                  ) : (
+                    <form onSubmit={handleProfileSubmit} className="space-y-4">
+                      <div>
+                        <label className="block text-xs font-bold text-slate-700 mb-1.5">Full Name</label>
+                        <input
+                          type="text"
+                          required
+                          value={profileForm.name}
+                          onChange={(e) => setProfileForm({ ...profileForm, name: e.target.value })}
+                          className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm text-slate-900 bg-white focus:outline-none focus:ring-2 focus:ring-slate-900"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-xs font-bold text-slate-700 mb-1.5">Email Address</label>
+                        <input
+                          type="email"
+                          disabled
+                          value={user.email}
+                          className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm text-slate-500 bg-slate-50"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-xs font-bold text-slate-700 mb-1.5">Phone Number</label>
+                        <input
+                          type="tel"
+                          value={profileForm.phone}
+                          onChange={(e) => setProfileForm({ ...profileForm, phone: e.target.value })}
+                          className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm text-slate-900 bg-white focus:outline-none focus:ring-2 focus:ring-slate-900"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-xs font-bold text-slate-700 mb-1.5">State</label>
+                        <select
+                          value={profileForm.state}
+                          onChange={(e) => setProfileForm({ ...profileForm, state: e.target.value })}
+                          className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm text-slate-900 bg-white focus:outline-none focus:ring-2 focus:ring-slate-900"
+                        >
+                          <option value="">Select state</option>
+                          {states.map((s) => (
+                            <option key={s.id} value={s.name}>
+                              {s.name}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+
+                      <div className="flex items-center gap-2 pt-2">
+                        <button type="submit" className="px-5 py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs sm:text-sm transition-colors cursor-pointer">
+                          Save Changes
+                        </button>
+                        <button
+                          type="button"
+                          onClick={handleCancelProfileEdit}
+                          className="px-5 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs sm:text-sm transition-colors cursor-pointer"
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    </form>
+                  )}
+                </div>
               </div>
 
-              <div className="space-y-4 pt-6 border-t border-slate-100">
-                <h2 className="text-base font-bold text-slate-900">Change Password</h2>
-                {passwordSuccess && (
-                  <div className="p-3.5 rounded-xl bg-emerald-50 border border-emerald-200 text-xs font-bold text-emerald-700 flex items-center gap-2">
-                    <HiOutlineCheckCircle className="text-base" />
-                    <span>Password changed successfully!</span>
+              {/* CHANGE PASSWORD — collapsible */}
+              <div className="rounded-2xl border border-slate-200 bg-white overflow-hidden">
+                <button
+                  type="button"
+                  onClick={() => setIsPasswordSectionOpen((o) => !o)}
+                  className="w-full flex items-center justify-between gap-3 px-5 py-4 text-left cursor-pointer"
+                >
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-8 h-8 rounded-lg bg-slate-100 text-slate-600 flex items-center justify-center shrink-0">
+                      <HiOutlineLockClosed className="text-sm" />
+                    </div>
+                    <h2 className="text-sm font-bold text-slate-900">Change Password</h2>
                   </div>
-                )}
-                {passwordError && <p className="text-xs font-medium text-red-600">{passwordError}</p>}
+                  <HiOutlineChevronDown
+                    className={`w-4 h-4 text-slate-400 shrink-0 transition-transform duration-300 ease-in-out ${
+                      isPasswordSectionOpen ? "rotate-180" : "rotate-0"
+                    }`}
+                  />
+                </button>
 
-                <form onSubmit={handlePasswordSubmit} className="space-y-4">
-                  <div>
-                    <label className="block text-xs font-bold text-slate-700 mb-1.5">Current Password</label>
-                    <input
-                      type="password"
-                      required
-                      value={passwordForm.currentPassword}
-                      onChange={(e) => setPasswordForm({ ...passwordForm, currentPassword: e.target.value })}
-                      className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm text-slate-900 bg-white focus:outline-none focus:ring-2 focus:ring-slate-900"
-                    />
+                <div
+                  className={`grid transition-[grid-template-rows] duration-300 ease-in-out ${
+                    isPasswordSectionOpen ? "grid-rows-[1fr]" : "grid-rows-[0fr]"
+                  }`}
+                >
+                  <div className="overflow-hidden">
+                    <div className="px-5 pb-5 pt-1 border-t border-slate-100">
+                      {passwordError && <p className="mt-4 text-xs font-medium text-red-600">{passwordError}</p>}
+
+                      <form onSubmit={handlePasswordSubmit} className="space-y-4 mt-4">
+                        <div>
+                          <label className="block text-xs font-bold text-slate-700 mb-1.5">Current Password</label>
+                          <div className="relative">
+                            <input
+                              type={showCurrentPassword ? "text" : "password"}
+                              required
+                              value={passwordForm.currentPassword}
+                              onChange={(e) => setPasswordForm({ ...passwordForm, currentPassword: e.target.value })}
+                              className="w-full px-3.5 py-2.5 pr-10 rounded-xl border border-slate-300 text-sm text-slate-900 bg-white focus:outline-none focus:ring-2 focus:ring-slate-900"
+                            />
+                            <button
+                              type="button"
+                              onClick={() => setShowCurrentPassword((v) => !v)}
+                              className="absolute inset-y-0 right-0 flex items-center px-3 text-slate-400 hover:text-slate-700 cursor-pointer"
+                              aria-label={showCurrentPassword ? "Hide password" : "Show password"}
+                            >
+                              {showCurrentPassword ? <HiOutlineEyeOff className="text-base" /> : <HiOutlineEye className="text-base" />}
+                            </button>
+                          </div>
+                        </div>
+                        <div>
+                          <label className="block text-xs font-bold text-slate-700 mb-1.5">New Password</label>
+                          <div className="relative">
+                            <input
+                              type={showNewPassword ? "text" : "password"}
+                              required
+                              minLength={6}
+                              value={passwordForm.newPassword}
+                              onChange={(e) => setPasswordForm({ ...passwordForm, newPassword: e.target.value })}
+                              className="w-full px-3.5 py-2.5 pr-10 rounded-xl border border-slate-300 text-sm text-slate-900 bg-white focus:outline-none focus:ring-2 focus:ring-slate-900"
+                            />
+                            <button
+                              type="button"
+                              onClick={() => setShowNewPassword((v) => !v)}
+                              className="absolute inset-y-0 right-0 flex items-center px-3 text-slate-400 hover:text-slate-700 cursor-pointer"
+                              aria-label={showNewPassword ? "Hide password" : "Show password"}
+                            >
+                              {showNewPassword ? <HiOutlineEyeOff className="text-base" /> : <HiOutlineEye className="text-base" />}
+                            </button>
+                          </div>
+                        </div>
+                        <div className="pt-2">
+                          <button type="submit" className="px-5 py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs sm:text-sm transition-colors cursor-pointer">
+                            Update Password
+                          </button>
+                        </div>
+                      </form>
+                    </div>
                   </div>
-                  <div>
-                    <label className="block text-xs font-bold text-slate-700 mb-1.5">New Password</label>
-                    <input
-                      type="password"
-                      required
-                      minLength={6}
-                      value={passwordForm.newPassword}
-                      onChange={(e) => setPasswordForm({ ...passwordForm, newPassword: e.target.value })}
-                      className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm text-slate-900 bg-white focus:outline-none focus:ring-2 focus:ring-slate-900"
-                    />
-                  </div>
-                  <div className="pt-2">
-                    <button type="submit" className="px-6 py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs sm:text-sm transition-colors cursor-pointer">
-                      Update Password
-                    </button>
-                  </div>
-                </form>
+                </div>
               </div>
             </div>
           )}

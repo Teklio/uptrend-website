@@ -91,7 +91,7 @@ export default function ForgotPasswordPage() {
                 Reset Link Sent!
               </h2>
 
-              <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">
+              <p className="text-xs sm:text-sm text-slate-600 leading-relaxed wrap-break-word">
                 We have dispatched password reset instructions to{" "}
                 <strong className="text-slate-900 font-semibold">{email}</strong>. Please check your inbox and spam folder.
               </p>

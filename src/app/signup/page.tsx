@@ -73,7 +73,7 @@ export default function SignupPage() {
           className="w-full max-w-md bg-white/95 backdrop-blur-xl rounded-3xl border border-slate-200/90 shadow-[0_20px_60px_rgba(0,43,127,0.08)] p-8 text-center"
         >
           <h1 className="text-2xl font-extrabold text-slate-950 tracking-tight mb-3">Check your email</h1>
-          <p className="text-sm text-slate-600 mb-6">
+          <p className="text-sm text-slate-600 mb-6 wrap-break-word">
             We&apos;ve sent a verification link to <strong>{formData.email}</strong>. Click it to activate your
             account and sign in.
           </p>
