@@ -11,6 +11,7 @@ import {
   HiOutlineArrowRight,
 } from "react-icons/hi";
 import Input from "@/components/Input";
+import { forgotPassword } from "@/services/auth.service";
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState("");
@@ -18,7 +19,7 @@ export default function ForgotPasswordPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
 
@@ -28,10 +29,14 @@ export default function ForgotPasswordPage() {
     }
 
     setLoading(true);
-    setTimeout(() => {
+    try {
+      // Always shows success, matching the backend's intentionally silent
+      // behavior (never reveals whether the account exists).
+      await forgotPassword(email);
+    } finally {
       setLoading(false);
       setSubmitted(true);
-    }, 1000);
+    }
   };
 
   return (
@@ -92,14 +97,6 @@ export default function ForgotPasswordPage() {
               </p>
 
               <div className="pt-4 flex flex-col gap-3">
-                <Link
-                  href="/reset-password"
-                  className="w-full inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl text-sm font-bold text-slate-950 bg-brand-gold hover:bg-brand-gold-hover transition-colors shadow-sm"
-                >
-                  <span>Go to Reset Password Screen</span>
-                  <HiOutlineArrowRight />
-                </Link>
-
                 <button
                   type="button"
                   onClick={() => setSubmitted(false)}

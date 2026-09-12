@@ -17,6 +17,8 @@ import {
 import { FaWhatsapp, FaPhoneAlt } from "react-icons/fa";
 import Input from "@/components/Input";
 import MarqueeBanner from "@/components/MarqueeBanner";
+import { submitContact } from "@/services/contact.service";
+import { ApiError } from "@/lib/api";
 
 const PHONE_NUMBER = "7907171406";
 const DISPLAY_PHONE = "790 7171 406";
@@ -33,7 +35,7 @@ export default function ContactPage() {
   const [submitted, setSubmitted] = useState(false);
   const [error, setError] = useState("");
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
 
@@ -43,11 +45,19 @@ export default function ContactPage() {
     }
 
     setLoading(true);
-    // Simulate inquiry submission
-    setTimeout(() => {
-      setLoading(false);
+    try {
+      await submitContact({
+        fullName: formData.name,
+        email: formData.email,
+        subject: `Website inquiry from ${formData.name} (${formData.phone})`,
+        message: formData.message,
+      });
       setSubmitted(true);
-    }, 1000);
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : "Could not send your message. Please try again.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   const whatsappUrl = `https://wa.me/91${PHONE_NUMBER}?text=Hi%20UPtrend,%20I%20would%20like%20to%20inquire%20about%20your%20trading%20courses.`;

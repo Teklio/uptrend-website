@@ -1,136 +1,297 @@
 "use client";
 
-import { useState, use, useEffect } from "react";
+import { useState, use, useEffect, useCallback } from "react";
 import Link from "next/link";
-import { notFound, useRouter } from "next/navigation";
-import { COURSES_DATA } from "@/data/courses";
-import { COURSE_CURRICULA, Lesson, Module } from "@/data/curriculum";
-import { useAuth } from "@/context/AuthContext";
 import {
   HiOutlineArrowLeft,
   HiOutlinePlay,
-  HiOutlineCheckCircle,
   HiOutlineChevronDown,
-  HiOutlineChevronUp,
   HiOutlineChevronRight,
   HiOutlineChevronLeft,
-  HiOutlineArrowsExpand,
-  HiOutlineBookOpen,
-  HiOutlineMenu,
-  HiX,
 } from "react-icons/hi";
-import { HiOutlineSpeakerWave, HiOutlineSpeakerXMark } from "react-icons/hi2";
 import { FiCheck } from "react-icons/fi";
+import { getEnrolledCourse, getVideoPlayback, updateVideoProgress } from "@/services/learn.service";
+import { EnrolledCourseDetail, EnrolledModule, EnrolledVideo, VideoPlayback } from "@/types/learn.type";
+import { ApiError } from "@/lib/api";
 
 interface PageProps {
   params: Promise<{ slug: string }>;
 }
 
-export default function CourseVideoLearningPage({ params }: PageProps) {
-  const resolvedParams = use(params);
-  const router = useRouter();
-  const {
-    user,
-    completedLessons,
-    toggleLessonCompleted,
-    isLessonCompleted,
-    setLastWatched,
-    getCourseProgress,
-  } = useAuth();
+const formatDuration = (seconds: number | null) => {
+  if (seconds == null) return "--:--";
+  const m = Math.floor(seconds / 60);
+  const s = seconds % 60;
+  return `${m}:${String(s).padStart(2, "0")}`;
+};
 
-  const course = COURSES_DATA.find((c) => c.slug === resolvedParams.slug);
-  const curriculum = COURSE_CURRICULA[resolvedParams.slug] || COURSE_CURRICULA["swing-trading-master-course"];
-
-  // Flattened lessons list for easy traversal
-  const allLessons: { lesson: Lesson; module: Module }[] = [];
-  if (curriculum) {
-    curriculum.modules.forEach((mod) => {
-      mod.lessons.forEach((les) => {
-        allLessons.push({ lesson: les, module: mod });
-      });
-    });
-  }
-
-  // Active Lesson State
-  const [activeLessonId, setActiveLessonId] = useState<string>(
-    allLessons[0]?.lesson.id || "sw-intro-1"
+function NowPlayingBars() {
+  return (
+    <div className="flex items-end gap-[2px] h-3">
+      {[0, 1, 2].map((i) => (
+        <span
+          key={i}
+          className="w-[2.5px] bg-white rounded-full animate-[nowplaying_1s_ease-in-out_infinite]"
+          style={{ animationDelay: `${i * 0.15}s`, height: "100%" }}
+        />
+      ))}
+    </div>
   );
+}
 
-  // Accordion open/close state for module subheadings
-  const [openModules, setOpenModules] = useState<Record<string, boolean>>({
-    "mod-intro": true,
-    "mod-week-1": true,
-    "mod-week-2": true,
-    "mod-week-3": true,
-    "mod-week-4": true,
-  });
+function PlaylistRow({
+  video,
+  index,
+  isSelected,
+  onSelect,
+}: {
+  video: EnrolledVideo;
+  index: number;
+  isSelected: boolean;
+  onSelect: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onSelect}
+      className={`w-full flex items-start gap-3 px-4 py-3 text-left transition-colors cursor-pointer ${
+        isSelected ? "bg-slate-900" : "hover:bg-slate-50"
+      }`}
+    >
+      <div className="relative w-[72px] h-[42px] sm:w-20 sm:h-[46px] rounded-lg overflow-hidden shrink-0 bg-slate-800 border border-slate-200/60">
+        {video.thumbnailUrl ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={video.thumbnailUrl} alt="" className="w-full h-full object-cover" />
+        ) : (
+          <div className="w-full h-full bg-gradient-to-br from-slate-700 to-slate-900" />
+        )}
+        <div className={`absolute inset-0 flex items-center justify-center ${isSelected ? "bg-slate-950/50" : "bg-slate-950/25"}`}>
+          {isSelected ? (
+            <NowPlayingBars />
+          ) : video.isCompleted ? (
+            <div className="w-5 h-5 rounded-full bg-emerald-500 text-white flex items-center justify-center">
+              <FiCheck className="w-3 h-3 stroke-[3]" />
+            </div>
+          ) : (
+            <HiOutlinePlay className="text-white text-lg drop-shadow" />
+          )}
+        </div>
+        <span className="absolute bottom-0.5 right-0.5 text-[9px] font-mono font-semibold text-white bg-black/70 px-1 rounded leading-tight">
+          {formatDuration(video.durationSeconds)}
+        </span>
+      </div>
 
-  // Video player controls
-  const [isPlaying, setIsPlaying] = useState<boolean>(false);
-  const [playbackSpeed, setPlaybackSpeed] = useState<number>(1);
-  const [isMuted, setIsMuted] = useState<boolean>(false);
-  const [progressPercent, setProgressPercent] = useState<number>(30);
-  const [sidebarOpen, setSidebarOpen] = useState<boolean>(false);
-  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState<boolean>(false);
+      <div className="min-w-0 flex-1 pt-0.5">
+        <p className={`text-xs font-semibold leading-snug line-clamp-2 ${isSelected ? "text-white" : "text-slate-800"}`}>
+          {index}. {video.title}
+        </p>
+        {video.description && (
+          <p className={`text-[11px] leading-snug line-clamp-2 mt-1 ${isSelected ? "text-slate-300" : "text-slate-400"}`}>
+            {video.description}
+          </p>
+        )}
+      </div>
 
-  const currentItem = allLessons.find((item) => item.lesson.id === activeLessonId) || allLessons[0];
-  const activeLesson = currentItem?.lesson;
-  const currentModule = currentItem?.module;
-  const currentIndex = allLessons.findIndex((item) => item.lesson.id === activeLessonId);
+      {video.isCompleted && !isSelected && (
+        <div className="w-4 h-4 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0 mt-0.5">
+          <FiCheck className="w-2.5 h-2.5 stroke-[3]" />
+        </div>
+      )}
+    </button>
+  );
+}
+
+function ModulePanel({
+  mod,
+  isOpen,
+  onToggleModule,
+  activeVideoId,
+  onSelectVideo,
+}: {
+  mod: EnrolledModule;
+  isOpen: boolean;
+  onToggleModule: () => void;
+  activeVideoId: string | null;
+  onSelectVideo: (id: string) => void;
+}) {
+  const completed = mod.videos.filter((v) => v.isCompleted).length;
+  const total = mod.videos.length;
+  const totalDuration = mod.videos.reduce((sum, v) => sum + (v.durationSeconds ?? 0), 0);
+
+  return (
+    <div className="bg-white">
+      <button
+        type="button"
+        onClick={onToggleModule}
+        className="w-full px-4 py-3.5 flex items-start justify-between gap-3 text-left hover:bg-slate-50 transition-colors cursor-pointer"
+      >
+        <div className="min-w-0">
+          <h3 className="text-[13px] font-bold text-slate-900 leading-snug">{mod.title}</h3>
+          {mod.description && <p className="text-[11px] text-slate-500 leading-snug mt-1 line-clamp-2">{mod.description}</p>}
+          <div className="flex items-center gap-2 mt-1.5">
+            <div className="w-16 h-1 rounded-full bg-slate-200 overflow-hidden">
+              <div
+                className="h-full rounded-full bg-emerald-500"
+                style={{ width: total > 0 ? `${(completed / total) * 100}%` : "0%" }}
+              />
+            </div>
+            <span className="text-[10px] font-semibold text-slate-400">
+              {completed}/{total} &bull; {formatDuration(totalDuration)}
+            </span>
+          </div>
+        </div>
+        <div className="text-slate-400 shrink-0 pt-0.5">
+          <HiOutlineChevronDown className={`w-4 h-4 transition-transform duration-300 ease-in-out ${isOpen ? "rotate-180" : "rotate-0"}`} />
+        </div>
+      </button>
+
+      <div
+        className={`grid transition-[grid-template-rows] duration-300 ease-in-out ${isOpen ? "grid-rows-[1fr]" : "grid-rows-[0fr]"}`}
+      >
+        <div className="overflow-hidden">
+          <div className="divide-y divide-slate-100 border-t border-slate-100">
+            {mod.videos.map((video, i) => (
+              <PlaylistRow
+                key={video.id}
+                video={video}
+                index={i + 1}
+                isSelected={video.id === activeVideoId}
+                onSelect={() => onSelectVideo(video.id)}
+              />
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export default function CourseVideoLearningPage({ params }: PageProps) {
+  const { slug: courseId } = use(params);
+
+  const [course, setCourse] = useState<EnrolledCourseDetail | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState("");
+  const [activeVideoId, setActiveVideoId] = useState<string | null>(null);
+  const [playback, setPlayback] = useState<VideoPlayback | null>(null);
+  const [marking, setMarking] = useState(false);
+  const [openModules, setOpenModules] = useState<Record<string, boolean>>({});
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+  const [mobilePlaylistOpen, setMobilePlaylistOpen] = useState(false);
+
+  const loadCourse = useCallback(async () => {
+    try {
+      const data = await getEnrolledCourse(courseId);
+      setCourse(data);
+      setOpenModules((prev) => {
+        const next = { ...prev };
+        data.modules.forEach((m) => {
+          if (!(m.id in next)) next[m.id] = true;
+        });
+        return next;
+      });
+      return data;
+    } catch (err) {
+      setLoadError(err instanceof ApiError ? err.message : "Could not load this course.");
+      return null;
+    }
+  }, [courseId]);
 
   useEffect(() => {
-    if (activeLessonId && resolvedParams.slug) {
-      setLastWatched(resolvedParams.slug, activeLessonId);
-    }
-  }, [activeLessonId, resolvedParams.slug]);
+    setLoading(true);
+    loadCourse().then((data) => {
+      if (data) setActiveVideoId(data.continueVideoId ?? data.modules[0]?.videos[0]?.id ?? null);
+      setLoading(false);
+    });
+  }, [loadCourse]);
 
-  if (!course || !curriculum) {
-    return notFound();
+  useEffect(() => {
+    if (!activeVideoId) return;
+    setPlayback(null);
+    getVideoPlayback(activeVideoId)
+      .then(setPlayback)
+      .catch(() => setPlayback(null));
+  }, [activeVideoId]);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-slate-50 flex flex-col">
+        <div className="h-16 bg-white border-b border-slate-200" />
+        <div className="flex-1 flex flex-col lg:flex-row">
+          <div className="hidden lg:block w-80 xl:w-88 bg-white border-r border-slate-200 shrink-0" />
+          <div className="flex-1 p-4 sm:p-6 lg:p-8">
+            <div className="max-w-4xl mx-auto space-y-6">
+              <div className="aspect-video w-full rounded-2xl bg-slate-200 animate-pulse" />
+              <div className="h-24 rounded-2xl bg-slate-200 animate-pulse" />
+            </div>
+          </div>
+        </div>
+      </div>
+    );
   }
 
-  const courseOverallProgress = getCourseProgress(course.slug);
+  if (loadError || !course) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center gap-4 text-center px-4">
+        <p className="text-sm text-slate-600">{loadError || "Course not found."}</p>
+        <Link href="/dashboard" className="text-brand-navy font-semibold hover:underline">
+          Back to Dashboard
+        </Link>
+      </div>
+    );
+  }
+
+  const allItems: { video: EnrolledVideo; module: EnrolledModule }[] = course.modules.flatMap((mod) =>
+    mod.videos.map((video) => ({ video, module: mod })),
+  );
+  const completedCount = allItems.filter((item) => item.video.isCompleted).length;
+  const currentIndex = allItems.findIndex((item) => item.video.id === activeVideoId);
+  const currentItem = currentIndex >= 0 ? allItems[currentIndex] : allItems[0];
+  const activeVideo = currentItem?.video;
+  const activeModule = currentItem?.module;
 
   const toggleModuleAccordion = (moduleId: string) => {
     setOpenModules((prev) => ({ ...prev, [moduleId]: !prev[moduleId] }));
   };
 
-  const handleSelectLesson = (lessonId: string) => {
-    setActiveLessonId(lessonId);
-    setIsPlaying(true);
-    setProgressPercent(0);
-    setSidebarOpen(false);
+  const handleSelectVideo = (videoId: string) => {
+    setActiveVideoId(videoId);
   };
 
-  const handleNextLesson = () => {
-    if (currentIndex < allLessons.length - 1) {
-      setActiveLessonId(allLessons[currentIndex + 1].lesson.id);
-      setIsPlaying(true);
-      setProgressPercent(0);
+  const handleNext = () => {
+    if (currentIndex < allItems.length - 1) setActiveVideoId(allItems[currentIndex + 1].video.id);
+  };
+
+  const handlePrev = () => {
+    if (currentIndex > 0) setActiveVideoId(allItems[currentIndex - 1].video.id);
+  };
+
+  const handleMarkCompleted = async () => {
+    if (!activeVideo || marking) return;
+    setMarking(true);
+    try {
+      await updateVideoProgress(activeVideo.id, {
+        watchedSeconds: activeVideo.durationSeconds ?? 0,
+        completed: true,
+      });
+      await loadCourse();
+    } finally {
+      setMarking(false);
     }
   };
 
-  const handlePrevLesson = () => {
-    if (currentIndex > 0) {
-      setActiveLessonId(allLessons[currentIndex - 1].lesson.id);
-      setIsPlaying(true);
-      setProgressPercent(0);
+  const handleMarkAndNext = async () => {
+    if (activeVideo && !activeVideo.isCompleted) {
+      await handleMarkCompleted();
     }
-  };
-
-  const handleMarkAndNext = () => {
-    if (activeLesson) {
-      if (!isLessonCompleted(activeLesson.id)) {
-        toggleLessonCompleted(activeLesson.id);
-      }
-      handleNextLesson();
-    }
+    handleNext();
   };
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900 flex flex-col font-sans">
-      {/* ============================================================ */}
-      {/* 1. TOP HEADER WITH BACK TO DASHBOARD & PROGRESS */}
-      {/* ============================================================ */}
+      <style>{`@keyframes nowplaying { 0%, 100% { height: 30%; } 50% { height: 100%; } }`}</style>
+
+      {/* TOP HEADER */}
       <header className="h-16 bg-white border-b border-slate-200 px-4 sm:px-6 flex items-center justify-between sticky top-0 z-30 shadow-sm">
         <div className="flex items-center gap-3 sm:gap-4 min-w-0">
           <Link
@@ -138,409 +299,202 @@ export default function CourseVideoLearningPage({ params }: PageProps) {
             className="flex items-center gap-2 text-xs sm:text-sm font-bold text-slate-700 hover:text-slate-950 p-1.5 rounded-lg hover:bg-slate-100 transition-colors shrink-0"
           >
             <HiOutlineArrowLeft className="text-base" />
-            <span>Dashboard</span>
+            <span className="hidden sm:inline">Dashboard</span>
           </Link>
 
           <div className="h-4 w-[1px] bg-slate-200 hidden sm:block" />
 
           <div className="min-w-0">
-            <h1 className="text-xs sm:text-sm font-bold text-slate-900 truncate max-w-xs sm:max-w-md lg:max-w-xl">
-              {course.title}
-            </h1>
+            <h1 className="text-xs sm:text-sm font-bold text-slate-900 truncate max-w-[160px] sm:max-w-md lg:max-w-xl">{course.name}</h1>
             <p className="text-[11px] text-slate-500 truncate hidden md:block">
-              {currentModule?.subheading} &bull; {activeLesson?.title}
+              {activeModule?.title} &bull; {activeVideo?.title}
             </p>
           </div>
         </div>
 
-        {/* Progress Bar & Mobile Drawer Button */}
-        <div className="flex items-center gap-3 sm:gap-5 shrink-0">
-          <div className="hidden sm:flex items-center gap-2.5 bg-slate-50 border border-slate-200 px-3 py-1.5 rounded-full text-xs">
-            <span className="text-slate-500 font-medium">Progress:</span>
-            <div className="w-20 bg-slate-200 rounded-full h-2 overflow-hidden">
+        <div className="flex items-center gap-2.5 sm:gap-5 shrink-0">
+          <div className="flex items-center gap-2 sm:gap-2.5 bg-slate-50 border border-slate-200 px-2.5 sm:px-3 py-1.5 rounded-full text-xs">
+            <span className="text-slate-500 font-medium hidden sm:inline">Progress:</span>
+            <div className="w-12 sm:w-20 bg-slate-200 rounded-full h-2 overflow-hidden">
               <div
-                className="bg-slate-900 h-full rounded-full transition-all duration-300"
-                style={{ width: `${Math.max(5, courseOverallProgress.percentage)}%` }}
+                className="bg-gradient-to-r from-brand-gold to-amber-400 h-full rounded-full transition-all duration-300"
+                style={{ width: `${Math.max(4, course.progressPercent)}%` }}
               />
             </div>
-            <span className="font-bold text-slate-900">
-              {courseOverallProgress.percentage}%
-            </span>
+            <span className="font-bold text-slate-900">{course.progressPercent}%</span>
           </div>
-
-          <button
-            type="button"
-            onClick={() => setSidebarOpen(true)}
-            className="lg:hidden flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-900 text-white text-xs font-bold"
-          >
-            <HiOutlineMenu className="text-base" />
-            <span>Curriculum</span>
-          </button>
         </div>
       </header>
 
-      {/* ============================================================ */}
-      {/* 2. MAIN LEARNING SPLIT VIEW */}
-      {/* ============================================================ */}
       <div className="flex-1 flex flex-col lg:flex-row relative">
-        {/* ======================================================== */}
-        {/* A. LEFT SIDEBAR: SUBHEADINGS & LESSON LIST */}
-        {/* ======================================================== */}
+        {/* LEFT SIDEBAR — DESKTOP PLAYLIST */}
         <aside
-          className={`bg-white border-r border-slate-200 flex flex-col shrink-0 h-[calc(100vh-64px)] sticky top-16 hidden lg:flex relative transition-all duration-300 ease-in-out ${
+          className={`bg-white border-r border-slate-200 flex-col shrink-0 h-[calc(100vh-64px)] sticky top-16 hidden lg:flex transition-all duration-300 ease-in-out ${
             isSidebarCollapsed ? "w-0 overflow-hidden border-r-0" : "w-80 xl:w-88"
           }`}
         >
-          {/* Header */}
-          <div className="p-4 border-b border-slate-100 flex items-center justify-between min-w-[320px]">
-            <h2 className="text-xs font-bold uppercase tracking-wider text-slate-500 flex items-center gap-2">
-              <HiOutlineBookOpen className="text-base text-slate-700" />
-              <span>Course Curriculum</span>
-            </h2>
-            <span className="text-[11px] font-bold text-slate-700">
-              {completedLessons.length} / {allLessons.length} Done
-            </span>
+          <div className="p-4 border-b border-slate-100 min-w-[320px]">
+            <div className="flex items-center justify-between mb-2">
+              <h2 className="text-xs font-bold uppercase tracking-wider text-slate-700">Course Content</h2>
+              <span className="text-[11px] font-bold text-slate-500">
+                {completedCount}/{allItems.length} done
+              </span>
+            </div>
+            <div className="w-full h-1.5 rounded-full bg-slate-200 overflow-hidden">
+              <div
+                className="h-full rounded-full bg-gradient-to-r from-brand-gold to-amber-400"
+                style={{ width: `${Math.max(0, course.progressPercent)}%` }}
+              />
+            </div>
           </div>
 
-          {/* Modules with Subheadings */}
           <div className="flex-1 overflow-y-auto divide-y divide-slate-100 min-w-[320px]">
-            {curriculum.modules.map((mod) => {
-              const isOpen = openModules[mod.id] ?? true;
-              const moduleLessons = mod.lessons;
-
-              return (
-                <div key={mod.id} className="bg-white">
-                  {/* Subheading header */}
-                  <button
-                    type="button"
-                    onClick={() => toggleModuleAccordion(mod.id)}
-                    className="w-full px-4 py-3 flex items-center justify-between text-left hover:bg-slate-50 transition-colors cursor-pointer"
-                  >
-                    <div>
-                      <span className="text-[11px] font-bold text-slate-600 uppercase tracking-wider block">
-                        {mod.subheading}
-                      </span>
-                      <h3 className="text-xs font-bold text-slate-900 line-clamp-1">
-                        {mod.title}
-                      </h3>
-                    </div>
-
-                    <div className="text-slate-400">
-                      {isOpen ? (
-                        <HiOutlineChevronUp className="w-4 h-4" />
-                      ) : (
-                        <HiOutlineChevronDown className="w-4 h-4" />
-                      )}
-                    </div>
-                  </button>
-
-                  {/* Lessons List with Active Bar */}
-                  {isOpen && (
-                    <div className="bg-slate-50/60 divide-y divide-slate-100/80">
-                      {moduleLessons.map((les) => {
-                        const isSelected = les.id === activeLessonId;
-                        const isDone = isLessonCompleted(les.id);
-
-                        return (
-                          <div
-                            key={les.id}
-                            className={`flex items-center justify-between px-4 py-3 transition-all relative ${
-                              isSelected
-                                ? "bg-white border-l-4 border-slate-900 text-slate-950 font-bold shadow-sm"
-                                : "border-l-4 border-transparent text-slate-600 hover:bg-white hover:text-slate-900"
-                            }`}
-                          >
-                            {/* Active Watch Bar Indicator */}
-                            {isSelected && (
-                              <div className="absolute left-0 top-0 bottom-0 w-1 bg-slate-900" />
-                            )}
-
-                            <button
-                              type="button"
-                              onClick={() => handleSelectLesson(les.id)}
-                              className="flex-1 flex items-start gap-2.5 text-left min-w-0 cursor-pointer"
-                            >
-                              <div className="pt-0.5 shrink-0">
-                                {isSelected ? (
-                                  <HiOutlinePlay className="text-slate-900 text-base" />
-                                ) : isDone ? (
-                                  <HiOutlineCheckCircle className="text-emerald-600 text-base" />
-                                ) : (
-                                  <HiOutlinePlay className="text-slate-400 text-sm" />
-                                )}
-                              </div>
-
-                              <div className="min-w-0">
-                                <p className="text-xs leading-snug line-clamp-2">
-                                  {les.title}
-                                </p>
-                                <span className="text-[11px] text-slate-400 font-mono mt-0.5 block">
-                                  {les.duration}
-                                </span>
-                              </div>
-                            </button>
-
-                            {/* Checkbox */}
-                            <button
-                              type="button"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                toggleLessonCompleted(les.id);
-                              }}
-                              title={isDone ? "Completed (Click to uncheck)" : "Mark as completed"}
-                              className={`p-1.5 rounded-md ml-2 cursor-pointer ${
-                                isDone
-                                  ? "text-emerald-600 bg-emerald-50"
-                                  : "text-slate-300 hover:text-slate-600"
-                              }`}
-                            >
-                              {isDone ? (
-                                <FiCheck className="w-3.5 h-3.5 stroke-[3]" />
-                              ) : (
-                                <div className="w-3.5 h-3.5 rounded border border-slate-300" />
-                              )}
-                            </button>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  )}
-                </div>
-              );
-            })}
+            {course.modules.map((mod) => (
+              <ModulePanel
+                key={mod.id}
+                mod={mod}
+                isOpen={openModules[mod.id] ?? true}
+                onToggleModule={() => toggleModuleAccordion(mod.id)}
+                activeVideoId={activeVideoId}
+                onSelectVideo={handleSelectVideo}
+              />
+            ))}
           </div>
         </aside>
 
-        {/* Floating Center Open / Close Toggle Button on Sidebar Border */}
         <button
           type="button"
           onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
           className={`hidden lg:flex fixed top-1/2 -translate-y-1/2 z-30 w-8 h-8 bg-white border border-slate-300 rounded-full shadow-lg items-center justify-center text-slate-700 hover:text-slate-950 hover:bg-slate-100 transition-all duration-300 cursor-pointer hover:scale-110 ${
             isSidebarCollapsed ? "left-4" : "left-[304px] xl:left-[336px]"
           }`}
-          title={isSidebarCollapsed ? "Open Curriculum Sidebar" : "Close Sidebar (Full Screen Video)"}
           aria-label="Toggle Sidebar"
         >
-          {isSidebarCollapsed ? (
-            <HiOutlineChevronRight className="w-4 h-4 text-slate-800" />
-          ) : (
-            <HiOutlineChevronLeft className="w-4 h-4 text-slate-800" />
-          )}
+          {isSidebarCollapsed ? <HiOutlineChevronRight className="w-4 h-4 text-slate-800" /> : <HiOutlineChevronLeft className="w-4 h-4 text-slate-800" />}
         </button>
 
-        {/* Mobile Slide-Over Curriculum */}
-        {sidebarOpen && (
-          <div className="fixed inset-0 z-50 flex lg:hidden">
-            <div
-              className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm"
-              onClick={() => setSidebarOpen(false)}
-            />
-            <div className="relative w-72 bg-white h-full flex flex-col shadow-xl z-10">
-              <div className="flex items-center justify-between p-4 border-b border-slate-200">
-                <h2 className="text-xs font-bold uppercase tracking-wider text-slate-700">
-                  Curriculum Modules
-                </h2>
-                <button
-                  type="button"
-                  onClick={() => setSidebarOpen(false)}
-                  className="p-1 text-slate-500 hover:text-slate-900"
-                >
-                  <HiX className="w-5 h-5" />
-                </button>
-              </div>
+        {/* MAIN VIDEO PLAYER */}
+        <main className="flex-1 overflow-y-auto p-3 sm:p-6 lg:p-8">
+          <div className={`mx-auto space-y-4 sm:space-y-6 transition-all duration-300 ${isSidebarCollapsed ? "max-w-6xl" : "max-w-4xl"}`}>
+            <div className="bg-black rounded-xl sm:rounded-2xl overflow-hidden shadow-lg relative aspect-video w-full">
+              {playback ? (
+                <iframe
+                  key={playback.videoId}
+                  src={playback.embedUrl}
+                  className="w-full h-full"
+                  allow="accelerometer; gyroscope; autoplay; encrypted-media; picture-in-picture"
+                  allowFullScreen
+                />
+              ) : (
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <div className="w-8 h-8 rounded-full border-2 border-white/30 border-t-white animate-spin" />
+                </div>
+              )}
+            </div>
 
-              <div className="flex-1 overflow-y-auto divide-y divide-slate-100">
-                {curriculum.modules.map((mod) => (
-                  <div key={mod.id} className="p-3">
-                    <span className="text-[10px] font-bold uppercase text-slate-400">
-                      {mod.subheading}
+            <div className="bg-white rounded-xl sm:rounded-2xl border border-slate-200 shadow-sm">
+              <div className="px-4 py-3 sm:px-5 sm:py-3.5">
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wide truncate">
+                    {activeModule?.title} &bull; Lesson {currentIndex + 1} of {allItems.length}
+                  </span>
+                  {activeVideo?.isCompleted && (
+                    <span className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-600 shrink-0">
+                      <FiCheck className="w-3 h-3 stroke-[3]" />
+                      Completed
                     </span>
-                    <h3 className="text-xs font-bold text-slate-900 mb-2">
-                      {mod.title}
-                    </h3>
-                    <div className="space-y-1">
-                      {mod.lessons.map((les) => (
-                        <button
-                          key={les.id}
-                          type="button"
-                          onClick={() => handleSelectLesson(les.id)}
-                          className={`w-full flex items-center justify-between p-2 rounded-lg text-left text-xs ${
-                            les.id === activeLessonId
-                              ? "bg-slate-900 text-white font-bold"
-                              : "text-slate-700 hover:bg-slate-100"
-                          }`}
-                        >
-                          <span className="truncate pr-2">{les.title}</span>
-                          <span className="font-mono text-[10px] shrink-0 opacity-75">
-                            {les.duration}
-                          </span>
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                ))}
+                  )}
+                </div>
+                <h2 className="text-sm sm:text-base font-bold text-slate-900 mt-1 leading-snug">{activeVideo?.title}</h2>
+                {activeVideo?.description && (
+                  <p className="text-xs sm:text-sm text-slate-500 leading-relaxed mt-1.5 max-w-2xl">{activeVideo.description}</p>
+                )}
               </div>
-            </div>
-          </div>
-        )}
 
-        {/* ======================================================== */}
-        {/* B. MAIN VIDEO PLAYER & CONTENT */}
-        {/* ======================================================== */}
-        <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 space-y-6">
-          <div className={`mx-auto space-y-6 transition-all duration-300 ${isSidebarCollapsed ? "max-w-6xl" : "max-w-4xl"}`}>
-            {/* 1. VIDEO PLAYER CONTAINER */}
-            <div className="bg-black rounded-2xl overflow-hidden shadow-lg relative aspect-video w-full flex items-center justify-center group">
-              {/* Simulated Video Screen */}
-              <div className="absolute inset-0 bg-slate-950 flex flex-col items-center justify-center p-6 text-center space-y-3">
+              <div className="flex items-center gap-2 px-3 py-2.5 sm:px-4 sm:py-3 border-t border-slate-100">
                 <button
                   type="button"
-                  onClick={() => setIsPlaying(!isPlaying)}
-                  className="w-16 h-16 rounded-full bg-white text-slate-950 flex items-center justify-center hover:scale-105 transition-transform shadow-xl cursor-pointer"
+                  onClick={handlePrev}
+                  disabled={currentIndex <= 0}
+                  className="p-2 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 disabled:opacity-30 disabled:cursor-not-allowed transition-colors cursor-pointer shrink-0"
+                  aria-label="Previous lesson"
                 >
-                  <HiOutlinePlay className="w-8 h-8 ml-1 text-slate-950" />
+                  <HiOutlineChevronLeft className="text-sm" />
                 </button>
 
-                <div className="space-y-0.5">
-                  <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">
-                    {currentModule?.subheading}
-                  </span>
-                  <h2 className="text-sm sm:text-base font-bold text-white max-w-md">
-                    {activeLesson?.title}
-                  </h2>
-                </div>
-              </div>
-
-              {/* Player Overlay Controls */}
-              <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black via-black/80 to-transparent p-4 space-y-2.5 z-10">
-                {/* Scrub bar */}
-                <div className="flex items-center gap-3">
-                  <div
-                    onClick={(e) => {
-                      const rect = e.currentTarget.getBoundingClientRect();
-                      const clickX = e.clientX - rect.left;
-                      setProgressPercent(Math.round((clickX / rect.width) * 100));
-                    }}
-                    className="flex-1 bg-white/20 hover:bg-white/30 h-1.5 rounded-full overflow-hidden cursor-pointer"
-                  >
-                    <div
-                      className="bg-white h-full rounded-full transition-all duration-150"
-                      style={{ width: `${progressPercent}%` }}
-                    />
-                  </div>
-                  <span className="text-[11px] font-mono text-white font-medium shrink-0">
-                    {activeLesson?.duration}
-                  </span>
-                </div>
-
-                {/* Player actions */}
-                <div className="flex items-center justify-between text-xs text-white">
-                  <div className="flex items-center gap-3">
-                    <button
-                      type="button"
-                      onClick={() => setIsPlaying(!isPlaying)}
-                      className="p-1 text-white hover:text-slate-200"
-                    >
-                      <HiOutlinePlay className="w-5 h-5" />
-                    </button>
-                    <button
-                      type="button"
-                      onClick={handlePrevLesson}
-                      disabled={currentIndex === 0}
-                      className="text-white hover:text-slate-200 disabled:opacity-30"
-                    >
-                      <HiOutlineChevronLeft className="w-5 h-5" />
-                    </button>
-                    <button
-                      type="button"
-                      onClick={handleNextLesson}
-                      disabled={currentIndex === allLessons.length - 1}
-                      className="text-white hover:text-slate-200 disabled:opacity-30"
-                    >
-                      <HiOutlineChevronRight className="w-5 h-5" />
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setIsMuted(!isMuted)}
-                      className="text-white hover:text-slate-200"
-                    >
-                      {isMuted ? (
-                        <HiOutlineSpeakerXMark className="w-5 h-5 text-red-400" />
-                      ) : (
-                        <HiOutlineSpeakerWave className="w-5 h-5" />
-                      )}
-                    </button>
-                  </div>
-
-                  <div className="flex items-center gap-3">
-                    <select
-                      value={playbackSpeed}
-                      onChange={(e) => setPlaybackSpeed(Number(e.target.value))}
-                      className="bg-black/80 border border-white/20 text-[11px] text-white rounded px-1.5 py-0.5"
-                    >
-                      <option value={0.75}>0.75x</option>
-                      <option value={1}>1x</option>
-                      <option value={1.25}>1.25x</option>
-                      <option value={1.5}>1.5x</option>
-                      <option value={2}>2x</option>
-                    </select>
-
-                    <button
-                      type="button"
-                      onClick={() => {
-                        const elem = document.documentElement;
-                        if (!document.fullscreenElement) {
-                          elem.requestFullscreen?.().catch(() => {});
-                        } else {
-                          document.exitFullscreen?.().catch(() => {});
-                        }
-                      }}
-                      className="text-white hover:text-slate-200"
-                    >
-                      <HiOutlineArrowsExpand className="w-4 h-4" />
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* 2. LESSON ACTION BAR */}
-            <div className="bg-white rounded-2xl border border-slate-200 p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-sm">
-              <div>
-                <span className="text-xs font-semibold text-slate-400 uppercase">
-                  {currentModule?.subheading} &bull; Lesson {currentIndex + 1} of {allLessons.length}
-                </span>
-                <h2 className="text-base sm:text-lg font-bold text-slate-900 mt-0.5">
-                  {activeLesson?.title}
-                </h2>
-              </div>
-
-              <div className="flex items-center gap-2.5 shrink-0">
                 <button
                   type="button"
-                  onClick={() => activeLesson && toggleLessonCompleted(activeLesson.id)}
-                  className={`px-4 py-2.5 rounded-xl font-bold text-xs sm:text-sm flex items-center gap-2 transition-colors cursor-pointer ${
-                    activeLesson && isLessonCompleted(activeLesson.id)
-                      ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
-                      : "bg-slate-100 hover:bg-slate-200 text-slate-800"
+                  onClick={handleMarkCompleted}
+                  disabled={marking || activeVideo?.isCompleted}
+                  className={`flex-1 px-3 py-2 rounded-lg font-bold text-xs flex items-center justify-center gap-1.5 transition-colors cursor-pointer disabled:cursor-not-allowed ${
+                    activeVideo?.isCompleted
+                      ? "bg-emerald-50 text-emerald-700"
+                      : "bg-slate-100 hover:bg-slate-200 text-slate-700 disabled:opacity-60"
                   }`}
                 >
-                  <HiOutlineCheckCircle className="text-base" />
-                  <span>
-                    {activeLesson && isLessonCompleted(activeLesson.id)
-                      ? "Completed"
-                      : "Mark Completed"}
-                  </span>
+                  <FiCheck className="text-sm" />
+                  <span>{activeVideo?.isCompleted ? "Completed" : marking ? "Saving..." : "Mark as complete"}</span>
                 </button>
 
                 <button
                   type="button"
                   onClick={handleMarkAndNext}
-                  className="px-4 py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs sm:text-sm flex items-center gap-1.5 transition-colors cursor-pointer"
+                  disabled={currentIndex >= allItems.length - 1}
+                  className="flex items-center gap-1 px-3 py-2 rounded-lg bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed shrink-0"
                 >
-                  <span>Next Video</span>
-                  <HiOutlineChevronRight className="text-base" />
+                  <span>Next</span>
+                  <HiOutlineChevronRight className="text-sm" />
                 </button>
+              </div>
+            </div>
+
+            {/* INLINE PLAYLIST — MOBILE/TABLET (YouTube-style, below the video) */}
+            <div className="lg:hidden bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+              <button
+                type="button"
+                onClick={() => setMobilePlaylistOpen((o) => !o)}
+                className="w-full flex items-center justify-between gap-3 px-4 py-3.5 text-left cursor-pointer"
+              >
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center justify-between gap-2">
+                    <h3 className="text-xs font-bold uppercase tracking-wider text-slate-700">Course Content</h3>
+                    <span className="text-[11px] font-bold text-slate-500 shrink-0">
+                      {completedCount}/{allItems.length} done
+                    </span>
+                  </div>
+                  <div className="w-full h-1.5 rounded-full bg-slate-200 overflow-hidden mt-2">
+                    <div
+                      className="h-full rounded-full bg-gradient-to-r from-brand-gold to-amber-400"
+                      style={{ width: `${Math.max(0, course.progressPercent)}%` }}
+                    />
+                  </div>
+                </div>
+                <HiOutlineChevronDown
+                  className={`w-4 h-4 text-slate-400 shrink-0 transition-transform duration-300 ease-in-out ${
+                    mobilePlaylistOpen ? "rotate-180" : "rotate-0"
+                  }`}
+                />
+              </button>
+
+              <div
+                className={`grid transition-[grid-template-rows] duration-300 ease-in-out ${
+                  mobilePlaylistOpen ? "grid-rows-[1fr]" : "grid-rows-[0fr]"
+                }`}
+              >
+                <div className="overflow-hidden">
+                  <div className="divide-y divide-slate-100 border-t border-slate-100">
+                    {course.modules.map((mod) => (
+                      <ModulePanel
+                        key={mod.id}
+                        mod={mod}
+                        isOpen={openModules[mod.id] ?? true}
+                        onToggleModule={() => toggleModuleAccordion(mod.id)}
+                        activeVideoId={activeVideoId}
+                        onSelectVideo={handleSelectVideo}
+                      />
+                    ))}
+                  </div>
+                </div>
               </div>
             </div>
           </div>

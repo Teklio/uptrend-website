@@ -13,6 +13,8 @@ import {
 } from "react-icons/hi";
 import Input from "@/components/Input";
 import { useAuth } from "@/context/AuthContext";
+import { ApiError } from "@/lib/api";
+import { resendVerification } from "@/services/auth.service";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -24,10 +26,13 @@ export default function LoginPage() {
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [needsVerification, setNeedsVerification] = useState(false);
+  const [resendState, setResendState] = useState<"idle" | "sending" | "sent">("idle");
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
+    setNeedsVerification(false);
 
     if (!formData.email || !formData.password) {
       setError("Please enter both email and password.");
@@ -35,11 +40,29 @@ export default function LoginPage() {
     }
 
     setLoading(true);
-    setTimeout(() => {
-      login(formData.email);
-      setLoading(false);
+    try {
+      await login(formData.email, formData.password);
       router.push("/dashboard");
-    }, 600);
+    } catch (err) {
+      if (err instanceof ApiError) {
+        setError(err.message);
+        if (err.message.toLowerCase().includes("verify")) setNeedsVerification(true);
+      } else {
+        setError("Something went wrong. Please try again.");
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleResend = async () => {
+    setResendState("sending");
+    try {
+      await resendVerification(formData.email);
+      setResendState("sent");
+    } catch {
+      setResendState("idle");
+    }
   };
 
   return (
@@ -84,6 +107,20 @@ export default function LoginPage() {
           {error && (
             <div className="mb-5 p-3.5 rounded-xl bg-red-50 border border-red-200 text-xs font-medium text-red-600">
               {error}
+              {needsVerification && (
+                <button
+                  type="button"
+                  onClick={handleResend}
+                  disabled={resendState !== "idle"}
+                  className="block mt-2 font-bold text-brand-navy hover:underline disabled:opacity-60"
+                >
+                  {resendState === "sent"
+                    ? "Verification email sent — check your inbox."
+                    : resendState === "sending"
+                      ? "Sending..."
+                      : "Resend verification email"}
+                </button>
+              )}
             </div>
           )}
 

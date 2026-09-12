@@ -3,7 +3,6 @@
 import React, { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import {
   HiOutlineUser,
@@ -14,11 +13,10 @@ import {
   HiOutlineSparkles,
 } from "react-icons/hi";
 import Input from "@/components/Input";
-import { useAuth } from "@/context/AuthContext";
+import { register } from "@/services/auth.service";
+import { ApiError } from "@/lib/api";
 
 export default function SignupPage() {
-  const router = useRouter();
-  const { login } = useAuth();
   const [formData, setFormData] = useState({
     fullName: "",
     email: "",
@@ -28,8 +26,9 @@ export default function SignupPage() {
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [registered, setRegistered] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
 
@@ -54,12 +53,40 @@ export default function SignupPage() {
     }
 
     setLoading(true);
-    setTimeout(() => {
-      login(formData.email, formData.fullName);
+    try {
+      await register({ email: formData.email, password: formData.password });
+      setRegistered(true);
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : "Something went wrong. Please try again.");
+    } finally {
       setLoading(false);
-      router.push("/dashboard");
-    }, 800);
+    }
   };
+
+  if (registered) {
+    return (
+      <div className="min-h-[85vh] w-full flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 bg-gradient-to-b from-slate-50/90 via-white to-slate-50/70">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+          className="w-full max-w-md bg-white/95 backdrop-blur-xl rounded-3xl border border-slate-200/90 shadow-[0_20px_60px_rgba(0,43,127,0.08)] p-8 text-center"
+        >
+          <h1 className="text-2xl font-extrabold text-slate-950 tracking-tight mb-3">Check your email</h1>
+          <p className="text-sm text-slate-600 mb-6">
+            We&apos;ve sent a verification link to <strong>{formData.email}</strong>. Click it to activate your
+            account and sign in.
+          </p>
+          <Link
+            href="/login"
+            className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl text-sm font-bold text-slate-950 bg-gradient-to-r from-brand-gold via-amber-400 to-brand-gold"
+          >
+            Go to Login
+          </Link>
+        </motion.div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-[85vh] w-full flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 bg-gradient-to-b from-slate-50/90 via-white to-slate-50/70 relative overflow-hidden">
