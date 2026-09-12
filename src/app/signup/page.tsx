@@ -3,6 +3,8 @@
 import React, { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
+import { useForm, FormProvider, Controller } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { motion } from "framer-motion";
 import {
   HiOutlineUser,
@@ -10,62 +12,39 @@ import {
   HiOutlineLockClosed,
   HiOutlineArrowRight,
   HiOutlineShieldCheck,
-  HiOutlineSparkles,
 } from "react-icons/hi";
 import Input from "@/components/Input";
 import { register } from "@/services/auth.service";
 import { ApiError } from "@/lib/api";
+import { applyServerFieldErrors } from "@/lib/formErrors";
+import { signupSchema, SignupSchemaType } from "@/schemas/auth.schema";
 
 export default function SignupPage() {
-  const [formData, setFormData] = useState({
-    fullName: "",
-    email: "",
-    password: "",
-    confirmPassword: "",
-    agreeTerms: true,
-  });
-  const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [registered, setRegistered] = useState(false);
+  const [registeredEmail, setRegisteredEmail] = useState("");
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const form = useForm<SignupSchemaType>({
+    resolver: zodResolver(signupSchema),
+    defaultValues: { fullName: "", email: "", password: "", confirmPassword: "", agreeTerms: true },
+  });
+
+  const onSubmit = async (values: SignupSchemaType) => {
     setError("");
-
-    if (!formData.fullName || !formData.email || !formData.password || !formData.confirmPassword) {
-      setError("Please fill in all required fields.");
-      return;
-    }
-
-    if (formData.password.length < 6) {
-      setError("Password must be at least 6 characters long.");
-      return;
-    }
-
-    if (formData.password !== formData.confirmPassword) {
-      setError("Passwords do not match.");
-      return;
-    }
-
-    if (!formData.agreeTerms) {
-      setError("Please agree to the Terms of Service and Privacy Policy.");
-      return;
-    }
-
-    setLoading(true);
     try {
-      await register({ email: formData.email, password: formData.password });
+      await register({ email: values.email, password: values.password, name: values.fullName });
+      setRegisteredEmail(values.email);
       setRegistered(true);
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : "Something went wrong. Please try again.");
-    } finally {
-      setLoading(false);
+      if (!applyServerFieldErrors(form, err)) {
+        setError(err instanceof ApiError ? err.message : "Something went wrong. Please try again.");
+      }
     }
   };
 
   if (registered) {
     return (
-      <div className="min-h-[85vh] w-full flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 bg-gradient-to-b from-slate-50/90 via-white to-slate-50/70">
+      <div className="min-h-[85vh] w-full flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 bg-linear-to-b from-slate-50/90 via-white to-slate-50/70">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -74,12 +53,12 @@ export default function SignupPage() {
         >
           <h1 className="text-2xl font-extrabold text-slate-950 tracking-tight mb-3">Check your email</h1>
           <p className="text-sm text-slate-600 mb-6 wrap-break-word">
-            We&apos;ve sent a verification link to <strong>{formData.email}</strong>. Click it to activate your
+            We&apos;ve sent a verification link to <strong>{registeredEmail}</strong>. Click it to activate your
             account and sign in.
           </p>
           <Link
             href="/login"
-            className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl text-sm font-bold text-slate-950 bg-gradient-to-r from-brand-gold via-amber-400 to-brand-gold"
+            className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl text-sm font-bold text-slate-950 bg-linear-to-r from-brand-gold via-amber-400 to-brand-gold"
           >
             Go to Login
           </Link>
@@ -89,7 +68,7 @@ export default function SignupPage() {
   }
 
   return (
-    <div className="min-h-[85vh] w-full flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 bg-gradient-to-b from-slate-50/90 via-white to-slate-50/70 relative overflow-hidden">
+    <div className="min-h-[85vh] w-full flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 bg-linear-to-b from-slate-50/90 via-white to-slate-50/70 relative overflow-hidden">
       {/* Ambient background glows */}
       <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-full max-w-4xl h-[450px] pointer-events-none -z-10">
         <div className="absolute top-0 right-1/4 w-72 h-72 rounded-full bg-brand-gold/15 blur-[100px]" />
@@ -134,88 +113,69 @@ export default function SignupPage() {
           )}
 
           {/* Signup Form */}
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <Input
-              label="Full Name"
-              type="text"
-              required
-              value={formData.fullName}
-              onChange={(e) =>
-                setFormData({ ...formData, fullName: e.target.value })
-              }
-              leftIcon={<HiOutlineUser />}
-            />
+          <FormProvider {...form}>
+            <form onSubmit={(e) => void form.handleSubmit(onSubmit)(e)} className="space-y-4">
+              <Input name="fullName" label="Full Name" type="text" required leftIcon={<HiOutlineUser />} />
 
-            <Input
-              label="Email Address"
-              type="email"
-              required
-              value={formData.email}
-              onChange={(e) =>
-                setFormData({ ...formData, email: e.target.value })
-              }
-              leftIcon={<HiOutlineMail />}
-            />
+              <Input name="email" label="Email Address" type="email" required leftIcon={<HiOutlineMail />} />
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <Input
-                label="Password"
-                type="password"
-                required
-                value={formData.password}
-                onChange={(e) =>
-                  setFormData({ ...formData, password: e.target.value })
-                }
-                leftIcon={<HiOutlineLockClosed />}
-              />
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <Input name="password" label="Password" type="password" required leftIcon={<HiOutlineLockClosed />} />
 
-              <Input
-                label="Confirm Password"
-                type="password"
-                required
-                value={formData.confirmPassword}
-                onChange={(e) =>
-                  setFormData({ ...formData, confirmPassword: e.target.value })
-                }
-                leftIcon={<HiOutlineLockClosed />}
-              />
-            </div>
-
-            {/* Terms checkbox */}
-            <div className="pt-1">
-              <label className="flex items-start gap-2.5 cursor-pointer select-none text-xs text-slate-600 leading-relaxed">
-                <input
-                  type="checkbox"
-                  checked={formData.agreeTerms}
-                  onChange={(e) =>
-                    setFormData({ ...formData, agreeTerms: e.target.checked })
-                  }
-                  className="rounded border-slate-300 text-brand-navy focus:ring-brand-navy/20 h-4 w-4 mt-0.5 shrink-0"
+                <Input
+                  name="confirmPassword"
+                  label="Confirm Password"
+                  type="password"
+                  required
+                  leftIcon={<HiOutlineLockClosed />}
                 />
-                <span>
-                  I agree to UPtrend's{" "}
-                  <Link href="/terms" className="font-semibold text-brand-navy hover:underline">
-                    Terms of Service
-                  </Link>{" "}
-                  and acknowledge the{" "}
-                  <Link href="/disclaimer" className="font-semibold text-brand-navy hover:underline">
-                    Risk Disclosure
-                  </Link>
-                  .
-                </span>
-              </label>
-            </div>
+              </div>
 
-            {/* Submit Button */}
-            <button
-              type="submit"
-              disabled={loading}
-              className="group relative w-full inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-xl text-sm font-bold text-white bg-gradient-to-r from-brand-navy via-blue-900 to-brand-navy hover:from-brand-navy-hover hover:to-brand-navy shadow-md shadow-brand-navy/25 transition-all duration-200 hover:scale-[1.01] active:scale-[0.99] disabled:opacity-60 cursor-pointer overflow-hidden mt-3"
-            >
-              <span>{loading ? "Creating Account..." : "Create Account"}</span>
-              <HiOutlineArrowRight className="text-sm text-brand-gold transition-transform duration-200 group-hover:translate-x-1" />
-            </button>
-          </form>
+              {/* Terms checkbox */}
+              <div className="pt-1">
+                <Controller
+                  name="agreeTerms"
+                  control={form.control}
+                  render={({ field, fieldState }) => (
+                    <>
+                      <label className="flex items-start gap-2.5 cursor-pointer select-none text-xs text-slate-600 leading-relaxed">
+                        <input
+                          type="checkbox"
+                          checked={field.value}
+                          onChange={(e) => field.onChange(e.target.checked)}
+                          className="rounded border-slate-300 text-brand-navy focus:ring-brand-navy/20 h-4 w-4 mt-0.5 shrink-0"
+                        />
+                        <span>
+                          I agree to UPtrend&apos;s{" "}
+                          <Link href="/terms" className="font-semibold text-brand-navy hover:underline">
+                            Terms of Service
+                          </Link>{" "}
+                          and acknowledge the{" "}
+                          <Link href="/disclaimer" className="font-semibold text-brand-navy hover:underline">
+                            Risk Disclosure
+                          </Link>
+                          .
+                        </span>
+                      </label>
+                      {fieldState.error && (
+                        <p className="text-xs font-medium text-red-500 mt-1.5">{fieldState.error.message}</p>
+                      )}
+                    </>
+                  )}
+                />
+              </div>
+
+              {/* Submit Button */}
+              <button
+                type="submit"
+                disabled={form.formState.isSubmitting}
+                className="group relative w-full inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-xl text-sm font-bold text-white bg-linear-to-r from-brand-navy via-blue-900 to-brand-navy hover:from-brand-navy-hover hover:to-brand-navy shadow-md shadow-brand-navy/25 transition-all duration-200 hover:scale-[1.01] active:scale-[0.99] disabled:opacity-60 cursor-pointer overflow-hidden mt-3"
+              >
+                <span>{form.formState.isSubmitting ? "Creating Account..." : "Create Account"}</span>
+                <HiOutlineArrowRight className="text-sm text-brand-gold transition-transform duration-200 group-hover:translate-x-1" />
+              </button>
+            </form>
+          </FormProvider>
 
           {/* Bottom Link */}
           <div className="mt-8 pt-6 border-t border-slate-100 text-center text-xs sm:text-sm text-slate-600">

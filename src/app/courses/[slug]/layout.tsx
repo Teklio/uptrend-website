@@ -15,7 +15,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
       title: course.name,
       description:
         course.description ||
-        `${course.name} — Instructor: ${course.mentorName ?? "UPtrend"}. Total Fee: ₹${course.price.toLocaleString("en-IN")}.`,
+        `${course.name} — Instructor: ${course.mentorName ?? "UPtrend"}. Total Fee: ₹${Number(course.price).toLocaleString("en-IN")}.`,
       openGraph: {
         title: `${course.name} | UPtrend Financial Academy`,
         description: course.description ?? undefined,

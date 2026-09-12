@@ -24,8 +24,8 @@ export default function MarqueeBanner() {
       <div className="absolute top-1/2 right-1/4 -translate-y-1/2 w-64 h-32 bg-blue-400/10 rounded-full blur-3xl pointer-events-none" />
 
       {/* Left and Right Edge Vignette Gradient Fades */}
-      <div className="absolute left-0 inset-y-0 w-16 sm:w-28 lg:w-40 bg-gradient-to-r from-brand-navy via-brand-navy/80 to-transparent z-10 pointer-events-none" />
-      <div className="absolute right-0 inset-y-0 w-16 sm:w-28 lg:w-40 bg-gradient-to-l from-brand-navy via-brand-navy/80 to-transparent z-10 pointer-events-none" />
+      <div className="absolute left-0 inset-y-0 w-16 sm:w-28 lg:w-40 bg-linear-to-r from-brand-navy via-brand-navy/80 to-transparent z-10 pointer-events-none" />
+      <div className="absolute right-0 inset-y-0 w-16 sm:w-28 lg:w-40 bg-linear-to-l from-brand-navy via-brand-navy/80 to-transparent z-10 pointer-events-none" />
 
       {/* Infinite Seamless Scrolling Track */}
       <div className="flex w-fit whitespace-nowrap">

@@ -1,6 +1,6 @@
 import { api } from "@/lib/api";
 import { Paginated } from "@/types/common.type";
-import { CourseDetail, CourseListItem, CourseListParams, CourseReview } from "@/types/course.type";
+import { CourseDetail, CourseListItem, CourseListParams, CourseReview, CourseReviewsResponse } from "@/types/course.type";
 
 const toQuery = <T extends object>(params: T) => {
   const search = new URLSearchParams();
@@ -19,7 +19,7 @@ export const getCourse = (courseId: string) => api.get<CourseDetail>(`/courses/$
 export const listCourseReviews = (
   courseId: string,
   params: { page?: number; limit?: number; rating?: number; sort?: "newest" | "highest" | "lowest" } = {},
-) => api.get<Paginated<CourseReview>>(`/courses/${courseId}/reviews${toQuery(params)}`);
+) => api.get<CourseReviewsResponse>(`/courses/${courseId}/reviews${toQuery(params)}`);
 
 export const postCourseReview = (courseId: string, data: { rating: number; comment?: string }) =>
   api.post<CourseReview>(`/courses/${courseId}/reviews`, data);

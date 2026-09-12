@@ -94,7 +94,7 @@ function PlaylistRow({
 
       {video.isCompleted && !isSelected && (
         <div className="w-4 h-4 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0 mt-0.5">
-          <FiCheck className="w-2.5 h-2.5 stroke-[3]" />
+          <FiCheck className="w-2.5 h-2.5 stroke-3" />
         </div>
       )}
     </button>
@@ -360,8 +360,8 @@ function CourseLearningView({ courseId }: { courseId: string }) {
             <span className="text-slate-500 font-medium hidden sm:inline">Progress:</span>
             <div className="w-12 sm:w-20 bg-slate-200 rounded-full h-2 overflow-hidden">
               <div
-                className="bg-gradient-to-r from-brand-gold to-amber-400 h-full rounded-full transition-all duration-300"
-                style={{ width: `${Math.max(4, course.progressPercent)}%` }}
+                className="bg-linear-to-r from-brand-gold to-amber-400 h-full rounded-full transition-all duration-300"
+                style={{ width: `${course.progressPercent}%` }}
               />
             </div>
             <span className="font-bold text-slate-900">{course.progressPercent}%</span>
@@ -385,8 +385,8 @@ function CourseLearningView({ courseId }: { courseId: string }) {
             </div>
             <div className="w-full h-1.5 rounded-full bg-slate-200 overflow-hidden">
               <div
-                className="h-full rounded-full bg-gradient-to-r from-brand-gold to-amber-400"
-                style={{ width: `${Math.max(0, course.progressPercent)}%` }}
+                className="h-full rounded-full bg-linear-to-r from-brand-gold to-amber-400"
+                style={{ width: `${course.progressPercent}%` }}
               />
             </div>
           </div>
@@ -431,7 +431,7 @@ function CourseLearningView({ courseId }: { courseId: string }) {
                   </span>
                   {activeVideo?.isCompleted && (
                     <span className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-600 shrink-0">
-                      <FiCheck className="w-3 h-3 stroke-[3]" />
+                      <FiCheck className="w-3 h-3 stroke-3" />
                       Completed
                     </span>
                   )}
@@ -495,8 +495,8 @@ function CourseLearningView({ courseId }: { courseId: string }) {
                   </div>
                   <div className="w-full h-1.5 rounded-full bg-slate-200 overflow-hidden mt-2">
                     <div
-                      className="h-full rounded-full bg-gradient-to-r from-brand-gold to-amber-400"
-                      style={{ width: `${Math.max(0, course.progressPercent)}%` }}
+                      className="h-full rounded-full bg-linear-to-r from-brand-gold to-amber-400"
+                      style={{ width: `${course.progressPercent}%` }}
                     />
                   </div>
                 </div>

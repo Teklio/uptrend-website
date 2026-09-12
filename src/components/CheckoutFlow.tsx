@@ -1,7 +1,9 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import { useState, useEffect, BaseSyntheticEvent } from "react";
 import { useRouter } from "next/navigation";
+import { useForm, FormProvider, Controller } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { motion, AnimatePresence } from "framer-motion";
 import { HiX, HiCheckCircle, HiOutlinePlay, HiOutlineArrowRight, HiOutlineExclamationCircle } from "react-icons/hi";
 import { useAuth } from "@/context/AuthContext";
@@ -9,12 +11,16 @@ import { checkout, checkoutGuest, verifyPayment } from "@/services/payment.servi
 import { listStates } from "@/services/state.service";
 import { loadRazorpayScript, RazorpayOptions } from "@/lib/razorpay";
 import { ApiError } from "@/lib/api";
+import { applyServerFieldErrors } from "@/lib/formErrors";
 import { StateOption } from "@/types/common.type";
+import { buildCheckoutFormSchema, CheckoutFormSchemaType } from "@/schemas/checkout.schema";
+import Input from "@/components/Input";
 
 export interface CheckoutCourse {
   id: string;
   name: string;
   price: number;
+  extraFee: number;
   primaryImageUrl: string | null;
 }
 
@@ -31,28 +37,56 @@ export default function CheckoutFlow({ course, isOpen, onClose }: CheckoutFlowPr
   const { isLoggedIn, user, refreshUser } = useAuth();
 
   const [step, setStep] = useState<Step>("details");
-  const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
-  const [phone, setPhone] = useState("");
-  const [password, setPassword] = useState("");
-  const [stateValue, setStateValue] = useState("");
   const [states, setStates] = useState<StateOption[]>([]);
   const [errorMessage, setErrorMessage] = useState("");
   const [paidAmount, setPaidAmount] = useState(0);
 
+  const form = useForm<CheckoutFormSchemaType>({
+    resolver: zodResolver(buildCheckoutFormSchema(!isLoggedIn)),
+    defaultValues: { name: "", email: "", phone: "", password: "", state: "" },
+  });
+
+  // Resets to the first step and clears any stale error the moment the
+  // drawer opens — compared during render (React's documented pattern for
+  // resetting state when a prop changes) rather than in an effect, since
+  // this component never unmounts between opens.
+  const [prevIsOpen, setPrevIsOpen] = useState(isOpen);
+  if (isOpen !== prevIsOpen) {
+    setPrevIsOpen(isOpen);
+    if (isOpen) {
+      setStep("details");
+      setErrorMessage("");
+    }
+  }
+
   useEffect(() => {
     if (!isOpen) return;
-    setStep("details");
-    setErrorMessage("");
-    setName(user?.name ?? "");
-    setEmail(user?.email ?? "");
-    setPhone(user?.phone ?? "");
-    setStateValue(user?.state ?? "");
-    setPassword("");
+    form.reset({
+      name: user?.name ?? "",
+      email: user?.email ?? "",
+      phone: user?.phone ?? "",
+      state: user?.state ?? "",
+      password: "",
+    });
     listStates()
       .then(setStates)
       .catch(() => setStates([]));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen, user]);
+
+  // Auto-redirects to the dashboard a couple seconds after a successful
+  // payment, matching verify-email's pattern — cleared on unmount/step
+  // change so it never fires after the user has already navigated away
+  // manually (e.g. by clicking "Start Learning").
+  useEffect(() => {
+    if (step !== "success") return;
+    const timer = setTimeout(() => {
+      onClose();
+      router.push("/dashboard");
+    }, 2500);
+    return () => clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [step]);
 
   useEffect(() => {
     document.body.style.overflow = isOpen ? "hidden" : "unset";
@@ -63,23 +97,28 @@ export default function CheckoutFlow({ course, isOpen, onClose }: CheckoutFlowPr
 
   if (!course) return null;
 
-  const handlePay = async (e?: React.FormEvent) => {
-    e?.preventDefault();
+  // Course fields arrive over the wire as Prisma Decimals, which serialize
+  // as JSON strings — Number(...) here guards against "200" + "36" silently
+  // concatenating into "20036" instead of adding to 236.
+  const coursePrice = Number(course.price);
+  const handlingFee = Number(course.extraFee) || 0;
+  const totalPayable = coursePrice + handlingFee;
+
+  const onSubmit = async (values: CheckoutFormSchemaType) => {
     setErrorMessage("");
-
-    const missingCommon = !name || !phone || !stateValue;
-    const missingGuestOnly = !isLoggedIn && (!email || !password);
-    if (missingCommon || missingGuestOnly) {
-      setErrorMessage("Please fill in all fields to continue.");
-      return;
-    }
-
     setStep("processing");
 
     try {
       const order = isLoggedIn
-        ? await checkout({ courseId: course.id, name: name || undefined, phone: phone || undefined, state: stateValue || undefined })
-        : await checkoutGuest({ courseId: course.id, email, password, name, phone, state: stateValue });
+        ? await checkout({ courseId: course.id, name: values.name, phone: values.phone, state: values.state })
+        : await checkoutGuest({
+            courseId: course.id,
+            email: values.email,
+            password: values.password,
+            name: values.name,
+            phone: values.phone,
+            state: values.state,
+          });
 
       const scriptLoaded = await loadRazorpayScript();
       if (!scriptLoaded) {
@@ -95,7 +134,7 @@ export default function CheckoutFlow({ course, isOpen, onClose }: CheckoutFlowPr
         name: "UPtrend Financial Academy",
         description: order.course.name,
         order_id: order.razorpayOrderId,
-        prefill: { name: name || user?.name || undefined, email: email || user?.email, contact: phone || undefined },
+        prefill: { name: values.name, email: values.email || user?.email, contact: values.phone },
         theme: { color: "#002b7f" },
         handler: async (response) => {
           try {
@@ -107,7 +146,7 @@ export default function CheckoutFlow({ course, isOpen, onClose }: CheckoutFlowPr
             });
 
             if (result.status === "SUCCESS") {
-              setPaidAmount(order.course.totalAmount);
+              setPaidAmount(Number(order.course.totalAmount));
               await refreshUser();
               setStep("success");
             } else {
@@ -126,10 +165,18 @@ export default function CheckoutFlow({ course, isOpen, onClose }: CheckoutFlowPr
 
       new window.Razorpay(options).open();
     } catch (err) {
-      setErrorMessage(err instanceof ApiError ? err.message : "Something went wrong. Please try again.");
-      setStep("error");
+      if (applyServerFieldErrors(form, err)) {
+        setStep("details");
+      } else {
+        setErrorMessage(err instanceof ApiError ? err.message : "Something went wrong. Please try again.");
+        setStep("error");
+      }
     }
   };
+
+  // Wrapped so form.handleSubmit(onSubmit) is only ever called at
+  // submit-time (inside this closure), not evaluated eagerly during render.
+  const submitCheckout = (e?: BaseSyntheticEvent) => void form.handleSubmit(onSubmit)(e);
 
   const goToLearning = () => {
     onClose();
@@ -180,7 +227,7 @@ export default function CheckoutFlow({ course, isOpen, onClose }: CheckoutFlowPr
             <div className="flex-1 overflow-y-auto p-5 sm:p-6 space-y-6">
               {step !== "success" && (
                 <div className="flex items-center gap-3.5 p-3 rounded-xl bg-slate-50 border border-slate-200">
-                  <div className="relative w-20 h-14 rounded-lg overflow-hidden bg-slate-900 flex-shrink-0">
+                  <div className="relative w-20 h-14 rounded-lg overflow-hidden bg-slate-900 shrink-0">
                     {course.primaryImageUrl && (
                       // eslint-disable-next-line @next/next/no-img-element
                       <img src={course.primaryImageUrl} alt={course.name} className="w-full h-full object-cover" />
@@ -188,95 +235,126 @@ export default function CheckoutFlow({ course, isOpen, onClose }: CheckoutFlowPr
                   </div>
                   <div className="flex-1 min-w-0">
                     <h3 className="text-xs font-semibold text-slate-900 line-clamp-2 leading-tight wrap-break-word">{course.name}</h3>
-                    <p className="text-sm font-bold text-blue-600 mt-0.5">₹{course.price.toLocaleString("en-IN")}</p>
+                    <p className="text-sm font-bold text-blue-600 mt-0.5">₹{coursePrice.toLocaleString("en-IN")}</p>
                   </div>
                 </div>
               )}
 
               {step === "details" && (
-                <motion.form initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} onSubmit={handlePay} className="space-y-4">
-                  {errorMessage && (
-                    <div className="p-3 rounded-xl bg-red-50 border border-red-200 text-xs font-medium text-red-600">
-                      {errorMessage}
-                    </div>
-                  )}
-
-                  <div>
-                    <label className="block text-xs font-bold text-slate-800 mb-1.5">Name</label>
-                    <input
-                      type="text"
-                      required
-                      value={name}
-                      onChange={(e) => setName(e.target.value)}
-                      className="w-full px-3.5 py-2.5 rounded-lg border border-slate-300 text-sm text-slate-900 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 shadow-sm"
-                    />
-                  </div>
-
-                  {!isLoggedIn && (
-                    <div>
-                      <label className="block text-xs font-bold text-slate-800 mb-1.5">Email</label>
-                      <input
-                        type="email"
-                        required
-                        value={email}
-                        onChange={(e) => setEmail(e.target.value)}
-                        className="w-full px-3.5 py-2.5 rounded-lg border border-slate-300 text-sm text-slate-900 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 shadow-sm"
-                      />
-                    </div>
-                  )}
-
-                  <div>
-                    <label className="block text-xs font-bold text-slate-800 mb-1.5">Phone number</label>
-                    <div className="flex rounded-lg border border-slate-300 overflow-hidden shadow-sm focus-within:ring-2 focus-within:ring-blue-500 focus-within:border-blue-500">
-                      <div className="flex items-center gap-1.5 px-3 bg-slate-50 border-r border-slate-300 text-xs font-semibold text-slate-800 select-none">
-                        <span className="text-base">🇮🇳</span>
-                        <span>+91</span>
+                <FormProvider {...form}>
+                  <motion.form
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    onSubmit={submitCheckout}
+                    className="space-y-4"
+                  >
+                    {errorMessage && (
+                      <div className="p-3 rounded-xl bg-red-50 border border-red-200 text-xs font-medium text-red-600">
+                        {errorMessage}
                       </div>
-                      <input
-                        type="tel"
-                        required
-                        maxLength={10}
-                        value={phone}
-                        onChange={(e) => setPhone(e.target.value.replace(/\D/g, ""))}
-                        className="flex-1 px-3.5 py-2.5 text-sm text-slate-900 bg-white focus:outline-none"
-                      />
-                    </div>
-                  </div>
+                    )}
 
-                  <div>
-                    <label className="block text-xs font-bold text-slate-800 mb-1.5">State</label>
-                    <select
-                      required
-                      value={stateValue}
-                      onChange={(e) => setStateValue(e.target.value)}
-                      className="w-full px-3.5 py-2.5 rounded-lg border border-slate-300 text-sm text-slate-900 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 shadow-sm"
-                    >
-                      <option value="">Select state</option>
-                      {states.map((s) => (
-                        <option key={s.id} value={s.name}>
-                          {s.name}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
+                    <Input name="name" label="Name" type="text" required />
 
-                  {!isLoggedIn && (
-                    <div>
-                      <label className="block text-xs font-bold text-slate-800 mb-1.5">Create a password</label>
-                      <input
+                    {!isLoggedIn && <Input name="email" label="Email" type="email" required />}
+
+                    <Controller
+                      name="phone"
+                      control={form.control}
+                      render={({ field, fieldState }) => (
+                        <div>
+                          <label className="block text-xs font-bold text-slate-800 mb-1.5">Phone number</label>
+                          <div
+                            className={`flex rounded-lg border overflow-hidden shadow-sm focus-within:ring-2 ${
+                              fieldState.error
+                                ? "border-red-400 focus-within:ring-red-100 focus-within:border-red-500"
+                                : "border-slate-300 focus-within:ring-blue-500 focus-within:border-blue-500"
+                            }`}
+                          >
+                            <div className="flex items-center gap-1.5 px-3 bg-slate-50 border-r border-slate-300 text-xs font-semibold text-slate-800 select-none">
+                              <span className="text-base">🇮🇳</span>
+                              <span>+91</span>
+                            </div>
+                            <input
+                              name={field.name}
+                              ref={field.ref}
+                              value={field.value}
+                              onBlur={field.onBlur}
+                              onChange={(e) => field.onChange(e.target.value.replace(/\D/g, "").slice(0, 10))}
+                              type="tel"
+                              inputMode="numeric"
+                              maxLength={10}
+                              className="flex-1 min-w-0 px-3.5 py-2.5 text-sm text-slate-900 bg-white focus:outline-none"
+                            />
+                          </div>
+                          {fieldState.error && (
+                            <p className="text-xs font-medium text-red-500 mt-1.5">{fieldState.error.message}</p>
+                          )}
+                        </div>
+                      )}
+                    />
+
+                    <Controller
+                      name="state"
+                      control={form.control}
+                      render={({ field, fieldState }) => (
+                        <div>
+                          <label className="block text-xs font-bold text-slate-800 mb-1.5">State</label>
+                          <select
+                            {...field}
+                            className={`w-full px-3.5 py-2.5 rounded-lg border text-sm text-slate-900 bg-white focus:outline-none focus:ring-2 shadow-sm ${
+                              fieldState.error
+                                ? "border-red-400 focus:ring-red-100 focus:border-red-500"
+                                : "border-slate-300 focus:ring-blue-500 focus:border-blue-500"
+                            }`}
+                          >
+                            <option value="">Select state</option>
+                            {states.map((s) => (
+                              <option key={s.id} value={s.name}>
+                                {s.name}
+                              </option>
+                            ))}
+                          </select>
+                          {fieldState.error && (
+                            <p className="text-xs font-medium text-red-500 mt-1.5">{fieldState.error.message}</p>
+                          )}
+                        </div>
+                      )}
+                    />
+
+                    {!isLoggedIn && (
+                      <Input
+                        name="password"
+                        label="Create a password"
                         type="password"
                         required
-                        minLength={6}
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
-                        className="w-full px-3.5 py-2.5 rounded-lg border border-slate-300 text-sm text-slate-900 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 shadow-sm"
+                        hint="This creates your UPtrend account so you can access your course after payment."
                       />
-                      <p className="text-[11px] text-slate-500 mt-1.5">
-                        This creates your UPtrend account so you can access your course after payment.
-                      </p>
+                    )}
+
+                    {/* Price Breakdown */}
+                    <div className="rounded-xl bg-slate-50 border border-slate-200 p-4 space-y-2">
+                      <div className="flex items-center justify-between text-sm text-slate-600">
+                        <span>Course price</span>
+                        <span className="font-semibold text-slate-800">
+                          ₹{coursePrice.toLocaleString("en-IN", { minimumFractionDigits: 2 })}
+                        </span>
+                      </div>
+                      <div className="flex items-center justify-between text-sm text-slate-600">
+                        <span>Internet handling fees</span>
+                        <span className="font-semibold text-slate-800">
+                          ₹{handlingFee.toLocaleString("en-IN", { minimumFractionDigits: 2 })}
+                        </span>
+                      </div>
+                      <div className="pt-2 mt-1 border-t border-slate-200 flex items-center justify-between">
+                        <span className="text-sm font-bold text-slate-900">You pay</span>
+                        <span className="text-base font-extrabold text-slate-950">
+                          ₹{totalPayable.toLocaleString("en-IN", { minimumFractionDigits: 2 })}
+                        </span>
+                      </div>
                     </div>
-                  )}
-                </motion.form>
+                  </motion.form>
+                </FormProvider>
               )}
 
               {step === "processing" && (
@@ -311,12 +389,13 @@ export default function CheckoutFlow({ course, isOpen, onClose }: CheckoutFlowPr
                   <p className="text-xs text-slate-600 leading-relaxed max-w-xs mx-auto wrap-break-word">
                     Your seat for <span className="font-bold text-slate-900">{course.name}</span> has been confirmed.
                   </p>
+                  <p className="text-[11px] text-slate-400">Taking you to your dashboard...</p>
 
                   <div className="bg-slate-50 rounded-xl p-4 border border-slate-200 text-left text-xs space-y-1.5">
                     <div className="flex justify-between">
                       <span className="text-slate-500">Amount Paid:</span>
                       <span className="font-bold text-emerald-700">
-                        ₹{paidAmount.toLocaleString("en-IN", { minimumFractionDigits: 2 })}
+                        ₹{Number(paidAmount).toLocaleString("en-IN", { minimumFractionDigits: 2 })}
                       </span>
                     </div>
                   </div>
@@ -325,7 +404,7 @@ export default function CheckoutFlow({ course, isOpen, onClose }: CheckoutFlowPr
                     <button
                       type="button"
                       onClick={goToLearning}
-                      className="w-full py-3.5 px-4 rounded-xl bg-gradient-to-r from-brand-gold via-amber-400 to-brand-gold text-slate-950 font-bold text-sm hover:from-amber-400 hover:to-brand-gold transition-all shadow-md flex items-center justify-center gap-2 cursor-pointer"
+                      className="w-full py-3.5 px-4 rounded-xl bg-linear-to-r from-brand-gold via-amber-400 to-brand-gold text-slate-950 font-bold text-sm hover:from-amber-400 hover:to-brand-gold transition-all shadow-md flex items-center justify-center gap-2 cursor-pointer"
                     >
                       <HiOutlinePlay className="text-lg" />
                       <span>Start Learning</span>
@@ -347,10 +426,11 @@ export default function CheckoutFlow({ course, isOpen, onClose }: CheckoutFlowPr
               <div className="border-t border-slate-200 bg-white">
                 <button
                   type="button"
-                  onClick={() => handlePay()}
-                  className="w-full py-4 bg-blue-600 hover:bg-blue-700 text-white font-bold text-base transition-colors text-center cursor-pointer"
+                  onClick={submitCheckout}
+                  disabled={form.formState.isSubmitting}
+                  className="w-full py-4 bg-blue-600 hover:bg-blue-700 text-white font-bold text-base transition-colors text-center cursor-pointer disabled:opacity-60"
                 >
-                  Pay ₹{course.price.toLocaleString("en-IN")}
+                  Pay ₹{totalPayable.toLocaleString("en-IN", { minimumFractionDigits: 2 })}
                 </button>
               </div>
             )}

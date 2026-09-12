@@ -1,3 +1,5 @@
+import { Pagination } from "./common.type";
+
 export interface CourseListItem {
   id: string;
   name: string;
@@ -6,6 +8,7 @@ export interface CourseListItem {
   language: string | null;
   price: number;
   actualPrice: number;
+  extraFee: number;
   primaryImageUrl: string | null;
   avgRating: number;
   reviewCount: number;
@@ -36,6 +39,7 @@ export interface CourseDetail {
   features: string[];
   price: number;
   actualPrice: number;
+  extraFee: number;
   primaryImageUrl: string | null;
   mentorImageUrl: string | null;
   avgRating: number;
@@ -49,6 +53,23 @@ export interface CourseReview {
   comment: string | null;
   createdAt: string;
   user: { name: string | null };
+}
+
+// The caller's own review for a course, returned alongside the public
+// review list even when an admin has hidden it from everyone else — only
+// its author ever sees it via this field.
+export interface MyCourseReview {
+  id: string;
+  rating: number;
+  comment: string | null;
+  createdAt: string;
+  isHidden: boolean;
+}
+
+export interface CourseReviewsResponse {
+  items: CourseReview[];
+  pagination: Pagination;
+  myReview: MyCourseReview | null;
 }
 
 export type CourseSort = "newest" | "price_asc" | "price_desc";

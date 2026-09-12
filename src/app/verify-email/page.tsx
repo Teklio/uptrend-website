@@ -1,13 +1,17 @@
 "use client";
 
-import React, { useState, useEffect, Suspense } from "react";
+import { useState, useEffect, Suspense } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useRouter, useSearchParams } from "next/navigation";
+import { useForm, FormProvider } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { motion } from "framer-motion";
-import { HiOutlineCheckCircle, HiOutlineExclamationCircle } from "react-icons/hi";
+import { HiOutlineCheckCircle, HiOutlineExclamationCircle, HiOutlineMail } from "react-icons/hi";
 import { useAuth } from "@/context/AuthContext";
 import { verifyEmail, resendVerification } from "@/services/auth.service";
+import { resendVerificationSchema, ResendVerificationSchemaType } from "@/schemas/auth.schema";
+import Input from "@/components/Input";
 
 function VerifyEmailContent() {
   const router = useRouter();
@@ -16,18 +20,21 @@ function VerifyEmailContent() {
   const { setUser } = useAuth();
 
   const [status, setStatus] = useState<"verifying" | "success" | "error">("verifying");
-  const [email, setEmail] = useState("");
   const [resendState, setResendState] = useState<"idle" | "sending" | "sent">("idle");
+
+  const form = useForm<ResendVerificationSchemaType>({
+    resolver: zodResolver(resendVerificationSchema),
+    defaultValues: { email: "" },
+  });
 
   useEffect(() => {
     if (!token) {
-      setStatus("error");
+      Promise.resolve().then(() => setStatus("error"));
       return;
     }
     verifyEmail(token)
       .then(({ user }) => {
         setUser(user);
-        setEmail(user.email);
         setStatus("success");
         setTimeout(() => router.push("/dashboard"), 1500);
       })
@@ -35,11 +42,10 @@ function VerifyEmailContent() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [token]);
 
-  const handleResend = async () => {
-    if (!email) return;
+  const handleResend = async (values: ResendVerificationSchemaType) => {
     setResendState("sending");
     try {
-      await resendVerification(email);
+      await resendVerification(values.email);
       setResendState("sent");
     } catch {
       setResendState("idle");
@@ -47,7 +53,7 @@ function VerifyEmailContent() {
   };
 
   return (
-    <div className="min-h-[80vh] w-full flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 bg-gradient-to-b from-slate-50/90 via-white to-slate-50/70">
+    <div className="min-h-[80vh] w-full flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 bg-linear-to-b from-slate-50/90 via-white to-slate-50/70">
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -82,21 +88,21 @@ function VerifyEmailContent() {
               This verification link is no longer valid. Enter your email below to get a new one, or head back to
               login.
             </p>
-            <input
-              type="email"
-              placeholder="you@example.com"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="w-full px-4 py-2.5 rounded-xl border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-brand-navy/20"
-            />
-            <button
-              type="button"
-              onClick={handleResend}
-              disabled={!email || resendState !== "idle"}
-              className="w-full px-6 py-3 rounded-xl text-sm font-bold text-slate-950 bg-brand-gold hover:bg-brand-gold-hover transition-colors disabled:opacity-60"
-            >
-              {resendState === "sent" ? "Sent — check your inbox" : resendState === "sending" ? "Sending..." : "Resend Verification Email"}
-            </button>
+
+            <FormProvider {...form}>
+              <form onSubmit={(e) => void form.handleSubmit(handleResend)(e)} className="space-y-4 text-left">
+                <Input name="email" type="email" placeholder="you@example.com" leftIcon={<HiOutlineMail />} />
+
+                <button
+                  type="submit"
+                  disabled={resendState !== "idle"}
+                  className="w-full px-6 py-3 rounded-xl text-sm font-bold text-slate-950 bg-brand-gold hover:bg-brand-gold-hover transition-colors disabled:opacity-60"
+                >
+                  {resendState === "sent" ? "Sent — check your inbox" : resendState === "sending" ? "Sending..." : "Resend Verification Email"}
+                </button>
+              </form>
+            </FormProvider>
+
             <Link href="/login" className="block text-xs font-bold text-brand-navy hover:underline">
               Back to Login
             </Link>

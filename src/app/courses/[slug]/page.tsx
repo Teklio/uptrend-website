@@ -1,14 +1,18 @@
 "use client";
 
-import React, { useState, useEffect, use } from "react";
+import { useState, useEffect, use } from "react";
 import Link from "next/link";
+import { useForm, FormProvider, Controller } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { motion } from "framer-motion";
 import { getCourse, listCourseReviews, postCourseReview } from "@/services/course.service";
 import { getEnrolledCourse } from "@/services/learn.service";
 import { useAuth } from "@/context/AuthContext";
-import { CourseDetail, CourseReview } from "@/types/course.type";
+import { CourseDetail, CourseReview, MyCourseReview } from "@/types/course.type";
 import CheckoutFlow from "@/components/CheckoutFlow";
 import { ApiError } from "@/lib/api";
+import { applyServerFieldErrors } from "@/lib/formErrors";
+import { courseReviewSchema, CourseReviewSchemaType } from "@/schemas/review.schema";
 import {
   HiOutlineArrowLeft,
   HiOutlineGlobeAlt,
@@ -23,19 +27,30 @@ interface PageProps {
 
 export default function CourseDetailPage({ params }: PageProps) {
   const { slug: courseId } = use(params);
+  // Keying on courseId forces a full remount when navigating between
+  // courses, so `loading`/`course` etc. reset to their initial values
+  // naturally instead of needing a manual setLoading(true) reset at the
+  // top of an effect.
+  return <CourseDetailView key={courseId} courseId={courseId} />;
+}
+
+function CourseDetailView({ courseId }: { courseId: string }) {
   const { isLoggedIn } = useAuth();
 
   const [course, setCourse] = useState<CourseDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [notFoundState, setNotFoundState] = useState(false);
   const [reviews, setReviews] = useState<CourseReview[]>([]);
+  const [myReview, setMyReview] = useState<MyCourseReview | null>(null);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [isEnrolled, setIsEnrolled] = useState(false);
-  const [reviewForm, setReviewForm] = useState({ rating: 5, comment: "" });
-  const [reviewSubmitting, setReviewSubmitting] = useState(false);
   const [reviewError, setReviewError] = useState("");
-  const [reviewSubmitted, setReviewSubmitted] = useState(false);
   const [expandedModules, setExpandedModules] = useState<Set<string>>(new Set());
+
+  const reviewForm = useForm<CourseReviewSchemaType>({
+    resolver: zodResolver(courseReviewSchema),
+    defaultValues: { rating: 5, comment: "" },
+  });
 
   const toggleModule = (moduleId: string) => {
     setExpandedModules((prev) => {
@@ -47,7 +62,6 @@ export default function CourseDetailPage({ params }: PageProps) {
   };
 
   useEffect(() => {
-    setLoading(true);
     getCourse(courseId)
       .then((data) => {
         setCourse(data);
@@ -59,13 +73,16 @@ export default function CourseDetailPage({ params }: PageProps) {
       .finally(() => setLoading(false));
 
     listCourseReviews(courseId, { limit: 12 })
-      .then((res) => setReviews(res.items))
+      .then((res) => {
+        setReviews(res.items);
+        setMyReview(res.myReview);
+      })
       .catch(() => setReviews([]));
   }, [courseId]);
 
   useEffect(() => {
     if (!isLoggedIn) {
-      setIsEnrolled(false);
+      Promise.resolve().then(() => setIsEnrolled(false));
       return;
     }
     getEnrolledCourse(courseId)
@@ -73,19 +90,17 @@ export default function CourseDetailPage({ params }: PageProps) {
       .catch(() => setIsEnrolled(false));
   }, [isLoggedIn, courseId]);
 
-  const handleSubmitReview = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmitReview = async (values: CourseReviewSchemaType) => {
     setReviewError("");
-    setReviewSubmitting(true);
     try {
-      await postCourseReview(courseId, { rating: reviewForm.rating, comment: reviewForm.comment || undefined });
-      setReviewSubmitted(true);
+      await postCourseReview(courseId, { rating: values.rating, comment: values.comment || undefined });
       const res = await listCourseReviews(courseId, { limit: 12 });
       setReviews(res.items);
+      setMyReview(res.myReview);
     } catch (err) {
-      setReviewError(err instanceof ApiError ? err.message : "Could not submit your review.");
-    } finally {
-      setReviewSubmitting(false);
+      if (!applyServerFieldErrors(reviewForm, err)) {
+        setReviewError(err instanceof ApiError ? err.message : "Could not submit your review.");
+      }
     }
   };
 
@@ -130,7 +145,7 @@ export default function CourseDetailPage({ params }: PageProps) {
             initial={{ opacity: 0, scale: 0.96 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 0.4 }}
-            className="relative w-full max-w-2xl mx-auto aspect-[16/9] rounded-2xl sm:rounded-3xl overflow-hidden shadow-2xl border-4 border-white bg-slate-900"
+            className="relative w-full max-w-2xl mx-auto aspect-video rounded-2xl sm:rounded-3xl overflow-hidden shadow-2xl border-4 border-white bg-slate-900"
           >
             {course.primaryImageUrl && (
               // eslint-disable-next-line @next/next/no-img-element
@@ -142,7 +157,7 @@ export default function CourseDetailPage({ params }: PageProps) {
             initial={{ opacity: 0, y: 15 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.1 }}
-            className="text-2xl sm:text-4xl md:text-5xl font-black text-[#0f172a] tracking-tight leading-tight max-w-3xl mx-auto wrap-break-word"
+            className="text-2xl sm:text-4xl md:text-5xl font-black text-text-main tracking-tight leading-tight max-w-3xl mx-auto wrap-break-word"
           >
             {course.name}
           </motion.h1>
@@ -180,7 +195,7 @@ export default function CourseDetailPage({ params }: PageProps) {
                 onClick={() => setIsDrawerOpen(true)}
                 className="inline-flex items-center justify-center px-8 sm:px-12 py-3.5 sm:py-4 rounded-xl text-base sm:text-lg font-bold text-white bg-[#0e5c3e] hover:bg-[#0b4b32] active:scale-[0.98] shadow-lg shadow-emerald-950/20 hover:shadow-xl transition-all cursor-pointer tracking-wide"
               >
-                Buy now for ₹{course.price.toLocaleString("en-IN")}
+                Buy now for ₹{Number(course.price).toLocaleString("en-IN")}
               </button>
             )}
           </motion.div>
@@ -208,13 +223,13 @@ export default function CourseDetailPage({ params }: PageProps) {
         {course.features.length > 0 && (
           <section className="mt-16 sm:mt-20 pt-10 border-t border-slate-300/80">
             <div className="text-center mb-8">
-              <h2 className="text-2xl sm:text-3xl font-black text-[#0f172a] tracking-tight">What you'll get</h2>
+              <h2 className="text-2xl sm:text-3xl font-black text-text-main tracking-tight">What you&apos;ll get</h2>
             </div>
             <div className="bg-white rounded-2xl p-6 sm:p-8 shadow-sm border border-slate-200/90">
               <div className={`grid grid-cols-1 gap-4 ${course.features.length > 1 ? "sm:grid-cols-2" : ""}`}>
                 {course.features.map((feature, idx) => (
                   <div key={idx} className="flex items-start gap-3.5 p-4 rounded-xl bg-slate-50/80 border border-slate-200/70 min-w-0">
-                    <div className="w-6 h-6 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center flex-shrink-0 mt-0.5">
+                    <div className="w-6 h-6 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center shrink-0 mt-0.5">
                       <FiCheckCircle className="w-4 h-4" />
                     </div>
                     <span className="text-sm font-semibold text-slate-800 leading-snug wrap-break-word min-w-0">{feature}</span>
@@ -229,7 +244,7 @@ export default function CourseDetailPage({ params }: PageProps) {
         {course.modules.length > 0 && (
           <section className="mt-16 sm:mt-20">
             <div className="text-center mb-2">
-              <h2 className="text-2xl sm:text-3xl font-black text-[#0f172a] tracking-tight">Curriculum</h2>
+              <h2 className="text-2xl sm:text-3xl font-black text-text-main tracking-tight">Curriculum</h2>
             </div>
             <p className="text-center text-sm text-slate-500 mb-8">
               {course.modules.length} {course.modules.length === 1 ? "module" : "modules"} &bull;{" "}
@@ -252,7 +267,7 @@ export default function CourseDetailPage({ params }: PageProps) {
                       onClick={() => toggleModule(courseModule.id)}
                       className="w-full flex items-start gap-4 p-5 sm:p-6 text-left hover:bg-slate-50/70 transition-colors"
                     >
-                      <div className="w-8 h-8 rounded-lg bg-blue-50 text-blue-600 font-bold text-xs sm:text-sm flex items-center justify-center flex-shrink-0 border border-blue-200 mt-0.5">
+                      <div className="w-8 h-8 rounded-lg bg-blue-50 text-blue-600 font-bold text-xs sm:text-sm flex items-center justify-center shrink-0 border border-blue-200 mt-0.5">
                         {idx + 1}
                       </div>
                       <div className="flex-1 min-w-0">
@@ -275,7 +290,7 @@ export default function CourseDetailPage({ params }: PageProps) {
                         </div>
                       </div>
                       <FiChevronDown
-                        className={`w-5 h-5 text-slate-400 flex-shrink-0 mt-1.5 transition-transform duration-200 ${
+                        className={`w-5 h-5 text-slate-400 shrink-0 mt-1.5 transition-transform duration-200 ${
                           isOpen ? "rotate-180" : ""
                         }`}
                       />
@@ -284,15 +299,15 @@ export default function CourseDetailPage({ params }: PageProps) {
                     {isOpen && courseModule.videos.length > 0 && (
                       <div className="border-t border-slate-100 divide-y divide-slate-100">
                         {courseModule.videos.map((video, vIdx) => (
-                          <div key={video.id} className="flex items-start gap-3.5 px-5 sm:px-6 py-4 pl-[4.25rem] sm:pl-[4.75rem]">
-                            <FiPlayCircle className="w-4 h-4 text-slate-300 flex-shrink-0 mt-0.5" />
+                          <div key={video.id} className="flex items-start gap-3.5 px-5 sm:px-6 py-4 pl-17 sm:pl-19">
+                            <FiPlayCircle className="w-4 h-4 text-slate-300 shrink-0 mt-0.5" />
                             <div className="flex-1 min-w-0">
                               <div className="flex items-start justify-between gap-3">
                                 <span className="text-sm font-semibold text-slate-800 wrap-break-word min-w-0">
                                   {vIdx + 1}. {video.title}
                                 </span>
                                 {video.durationSeconds != null && (
-                                  <span className="text-xs text-slate-400 font-mono flex-shrink-0">
+                                  <span className="text-xs text-slate-400 font-mono shrink-0">
                                     {Math.floor(video.durationSeconds / 60)}:
                                     {String(video.durationSeconds % 60).padStart(2, "0")}
                                   </span>
@@ -318,7 +333,7 @@ export default function CourseDetailPage({ params }: PageProps) {
         {/* REVIEWS */}
         <section className="mt-16 sm:mt-20">
           <div className="text-center mb-8">
-            <h2 className="text-2xl sm:text-3xl font-black text-[#0f172a] tracking-tight">Course Reviews</h2>
+            <h2 className="text-2xl sm:text-3xl font-black text-text-main tracking-tight">Course Reviews</h2>
           </div>
 
           {reviews.length > 0 ? (
@@ -340,47 +355,88 @@ export default function CourseDetailPage({ params }: PageProps) {
                 </div>
               ))}
             </div>
-          ) : (
+          ) : !myReview ? (
             <p className="text-center text-sm text-slate-500 mb-10">No reviews yet.</p>
-          )}
+          ) : null}
 
-          {isEnrolled && !reviewSubmitted && (
-            <form onSubmit={handleSubmitReview} className="max-w-lg mx-auto bg-white rounded-2xl p-6 shadow-sm border border-slate-200/90 space-y-3">
-              <h3 className="text-sm font-bold text-slate-900">Leave a review</h3>
-              {reviewError && <p className="text-xs text-red-600">{reviewError}</p>}
-              <div className="flex items-center gap-1">
-                {[1, 2, 3, 4, 5].map((star) => (
-                  <button
-                    key={star}
-                    type="button"
-                    onClick={() => setReviewForm({ ...reviewForm, rating: star })}
-                    className={star <= reviewForm.rating ? "text-amber-400" : "text-slate-300"}
-                  >
-                    <HiStar className="w-5 h-5" />
-                  </button>
+          {isEnrolled && myReview && (
+            <div className="max-w-lg mx-auto bg-white rounded-2xl p-6 shadow-sm border border-slate-200/90 space-y-3">
+              <h3 className="text-sm font-bold text-slate-900">Your review</h3>
+              <div className="flex items-center gap-1 text-amber-400">
+                {[...Array(myReview.rating)].map((_, i) => (
+                  <HiStar key={i} className="w-4 h-4 fill-current" />
                 ))}
               </div>
-              <textarea
-                value={reviewForm.comment}
-                onChange={(e) => setReviewForm({ ...reviewForm, comment: e.target.value })}
-                placeholder="Share your experience (optional)"
-                rows={3}
-                className="w-full px-3.5 py-2.5 rounded-lg border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-              <button
-                type="submit"
-                disabled={reviewSubmitting}
-                className="px-5 py-2.5 rounded-xl text-sm font-bold text-white bg-brand-navy hover:bg-slate-900 transition-colors disabled:opacity-60"
-              >
-                {reviewSubmitting ? "Submitting..." : "Submit Review"}
-              </button>
-            </form>
+              {myReview.comment && (
+                <p className="text-sm text-slate-700 italic leading-relaxed wrap-break-word">&quot;{myReview.comment}&quot;</p>
+              )}
+              <p className="text-xs text-slate-400">
+                Submitted {new Date(myReview.createdAt).toLocaleDateString("en-IN")}
+              </p>
+            </div>
           )}
-          {reviewSubmitted && <p className="text-center text-sm text-emerald-700 font-semibold">Thanks for your review!</p>}
+
+          {isEnrolled && !myReview && (
+            <FormProvider {...reviewForm}>
+              <form
+                onSubmit={(e) => void reviewForm.handleSubmit(handleSubmitReview)(e)}
+                className="max-w-lg mx-auto bg-white rounded-2xl p-6 shadow-sm border border-slate-200/90 space-y-3"
+              >
+                <h3 className="text-sm font-bold text-slate-900">Leave a review</h3>
+                {reviewError && <p className="text-xs text-red-600">{reviewError}</p>}
+                <Controller
+                  name="rating"
+                  control={reviewForm.control}
+                  render={({ field }) => (
+                    <div className="flex items-center gap-1">
+                      {[1, 2, 3, 4, 5].map((star) => (
+                        <button
+                          key={star}
+                          type="button"
+                          onClick={() => field.onChange(star)}
+                          className={star <= field.value ? "text-amber-400" : "text-slate-300"}
+                        >
+                          <HiStar className="w-5 h-5" />
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                />
+                <Controller
+                  name="comment"
+                  control={reviewForm.control}
+                  render={({ field, fieldState }) => (
+                    <div>
+                      <textarea
+                        {...field}
+                        placeholder="Share your experience (optional)"
+                        rows={3}
+                        className={`w-full px-3.5 py-2.5 rounded-lg border text-sm focus:outline-none focus:ring-2 ${
+                          fieldState.error
+                            ? "border-red-400 focus:ring-red-100"
+                            : "border-slate-300 focus:ring-blue-500"
+                        }`}
+                      />
+                      {fieldState.error && (
+                        <p className="text-xs font-medium text-red-500 mt-1">{fieldState.error.message}</p>
+                      )}
+                    </div>
+                  )}
+                />
+                <button
+                  type="submit"
+                  disabled={reviewForm.formState.isSubmitting}
+                  className="px-5 py-2.5 rounded-xl text-sm font-bold text-white bg-brand-navy hover:bg-slate-900 transition-colors disabled:opacity-60"
+                >
+                  {reviewForm.formState.isSubmitting ? "Submitting..." : "Submit Review"}
+                </button>
+              </form>
+            </FormProvider>
+          )}
         </section>
 
         {!isEnrolled && (
-          <div className="mt-16 sm:mt-20 bg-gradient-to-r from-brand-navy via-slate-900 to-slate-950 text-white rounded-3xl p-8 sm:p-12 text-center shadow-xl border border-white/10 relative overflow-hidden">
+          <div className="mt-16 sm:mt-20 bg-linear-to-r from-brand-navy via-slate-900 to-slate-950 text-white rounded-3xl p-8 sm:p-12 text-center shadow-xl border border-white/10 relative overflow-hidden">
             <div className="relative z-10 max-w-xl mx-auto space-y-4">
               <span className="inline-block px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-brand-gold/20 text-brand-gold border border-brand-gold/30">
                 Limited Cohort Seats
@@ -390,9 +446,9 @@ export default function CourseDetailPage({ params }: PageProps) {
                 <button
                   type="button"
                   onClick={() => setIsDrawerOpen(true)}
-                  className="px-8 py-3.5 rounded-xl font-bold text-slate-950 bg-gradient-to-r from-brand-gold via-amber-400 to-brand-gold hover:from-amber-400 hover:to-brand-gold transition-all shadow-lg hover:shadow-xl cursor-pointer text-sm uppercase tracking-wider"
+                  className="px-8 py-3.5 rounded-xl font-bold text-slate-950 bg-linear-to-r from-brand-gold via-amber-400 to-brand-gold hover:from-amber-400 hover:to-brand-gold transition-all shadow-lg hover:shadow-xl cursor-pointer text-sm uppercase tracking-wider"
                 >
-                  Enroll Now • ₹{course.price.toLocaleString("en-IN")}
+                  Enroll Now • ₹{Number(course.price).toLocaleString("en-IN")}
                 </button>
               </div>
             </div>
@@ -401,7 +457,13 @@ export default function CourseDetailPage({ params }: PageProps) {
       </div>
 
       <CheckoutFlow
-        course={{ id: course.id, name: course.name, price: course.price, primaryImageUrl: course.primaryImageUrl }}
+        course={{
+          id: course.id,
+          name: course.name,
+          price: course.price,
+          extraFee: course.extraFee,
+          primaryImageUrl: course.primaryImageUrl,
+        }}
         isOpen={isDrawerOpen}
         onClose={() => setIsDrawerOpen(false)}
       />

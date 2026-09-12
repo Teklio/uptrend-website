@@ -1,9 +1,11 @@
 "use client";
 
-import React, { useState, useEffect, Suspense } from "react";
+import { useState, useEffect, Suspense } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useSearchParams } from "next/navigation";
+import { useForm, FormProvider } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { motion } from "framer-motion";
 import {
   HiOutlineLockClosed,
@@ -15,20 +17,24 @@ import {
 import Input from "@/components/Input";
 import { validateResetToken, resetPassword } from "@/services/auth.service";
 import { ApiError } from "@/lib/api";
+import { resetPasswordFormSchema, ResetPasswordFormSchemaType } from "@/schemas/auth.schema";
 
 function ResetPasswordForm() {
   const searchParams = useSearchParams();
   const token = searchParams.get("token") ?? "";
 
   const [tokenState, setTokenState] = useState<"checking" | "valid" | "invalid">("checking");
-  const [formData, setFormData] = useState({ password: "", confirmPassword: "" });
-  const [loading, setLoading] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [error, setError] = useState("");
 
+  const form = useForm<ResetPasswordFormSchemaType>({
+    resolver: zodResolver(resetPasswordFormSchema),
+    defaultValues: { password: "", confirmPassword: "" },
+  });
+
   useEffect(() => {
     if (!token) {
-      setTokenState("invalid");
+      Promise.resolve().then(() => setTokenState("invalid"));
       return;
     }
     validateResetToken(token)
@@ -36,39 +42,19 @@ function ResetPasswordForm() {
       .catch(() => setTokenState("invalid"));
   }, [token]);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const onSubmit = async (values: ResetPasswordFormSchemaType) => {
     setError("");
-
-    if (!formData.password || !formData.confirmPassword) {
-      setError("Please fill in both fields.");
-      return;
-    }
-
-    if (formData.password.length < 6) {
-      setError("Password must be at least 6 characters long.");
-      return;
-    }
-
-    if (formData.password !== formData.confirmPassword) {
-      setError("Passwords do not match.");
-      return;
-    }
-
-    setLoading(true);
     try {
-      await resetPassword({ token, newPassword: formData.password });
+      await resetPassword({ token, newPassword: values.password });
       setSubmitted(true);
     } catch (err) {
       setError(err instanceof ApiError ? err.message : "Something went wrong. Please try again.");
-    } finally {
-      setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-[80vh] w-full flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 bg-gradient-to-b from-slate-50/90 via-white to-slate-50/70 relative overflow-hidden">
-      <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-full max-w-4xl h-[450px] pointer-events-none -z-10">
+    <div className="min-h-[80vh] w-full flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 bg-linear-to-b from-slate-50/90 via-white to-slate-50/70 relative overflow-hidden">
+      <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-full max-w-4xl h-112.5 pointer-events-none -z-10">
         <div className="absolute top-0 right-1/4 w-72 h-72 rounded-full bg-brand-gold/15 blur-[100px]" />
         <div className="absolute top-1/4 left-1/4 w-72 h-72 rounded-full bg-brand-navy/10 blur-[100px]" />
       </div>
@@ -144,40 +130,34 @@ function ResetPasswordForm() {
                 </div>
               </motion.div>
             ) : (
-              <form onSubmit={handleSubmit} className="space-y-4">
-                {error && (
-                  <div className="p-3.5 rounded-xl bg-red-50 border border-red-200 text-xs font-medium text-red-600">
-                    {error}
-                  </div>
-                )}
+              <FormProvider {...form}>
+                <form onSubmit={(e) => void form.handleSubmit(onSubmit)(e)} className="space-y-4">
+                  {error && (
+                    <div className="p-3.5 rounded-xl bg-red-50 border border-red-200 text-xs font-medium text-red-600">
+                      {error}
+                    </div>
+                  )}
 
-                <Input
-                  label="New Password"
-                  type="password"
-                  required
-                  value={formData.password}
-                  onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                  leftIcon={<HiOutlineLockClosed />}
-                />
+                  <Input name="password" label="New Password" type="password" required leftIcon={<HiOutlineLockClosed />} />
 
-                <Input
-                  label="Confirm New Password"
-                  type="password"
-                  required
-                  value={formData.confirmPassword}
-                  onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
-                  leftIcon={<HiOutlineLockClosed />}
-                />
+                  <Input
+                    name="confirmPassword"
+                    label="Confirm New Password"
+                    type="password"
+                    required
+                    leftIcon={<HiOutlineLockClosed />}
+                  />
 
-                <button
-                  type="submit"
-                  disabled={loading}
-                  className="group relative w-full inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-xl text-sm font-bold text-white bg-gradient-to-r from-brand-navy via-blue-900 to-brand-navy hover:from-brand-navy-hover hover:to-brand-navy shadow-md shadow-brand-navy/25 transition-all duration-200 hover:scale-[1.01] active:scale-[0.99] disabled:opacity-60 cursor-pointer overflow-hidden mt-3"
-                >
-                  <span>{loading ? "Updating Password..." : "Update Password"}</span>
-                  <HiOutlineArrowRight className="text-sm text-brand-gold transition-transform duration-200 group-hover:translate-x-1" />
-                </button>
-              </form>
+                  <button
+                    type="submit"
+                    disabled={form.formState.isSubmitting}
+                    className="group relative w-full inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-xl text-sm font-bold text-white bg-linear-to-r from-brand-navy via-blue-900 to-brand-navy hover:from-brand-navy-hover hover:to-brand-navy shadow-md shadow-brand-navy/25 transition-all duration-200 hover:scale-[1.01] active:scale-[0.99] disabled:opacity-60 cursor-pointer overflow-hidden mt-3"
+                  >
+                    <span>{form.formState.isSubmitting ? "Updating Password..." : "Update Password"}</span>
+                    <HiOutlineArrowRight className="text-sm text-brand-gold transition-transform duration-200 group-hover:translate-x-1" />
+                  </button>
+                </form>
+              </FormProvider>
             ))}
 
           {!submitted && (

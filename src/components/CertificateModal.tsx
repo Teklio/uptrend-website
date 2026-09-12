@@ -22,9 +22,15 @@ export default function CertificateModal({ isOpen, onClose, certificate }: Certi
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  useEffect(() => {
+  // Clears the error the moment the modal opens — compared during render
+  // (React's documented pattern for resetting state when a prop changes)
+  // rather than in an effect, since the modal itself never unmounts between
+  // opens.
+  const [prevIsOpen, setPrevIsOpen] = useState(isOpen);
+  if (isOpen !== prevIsOpen) {
+    setPrevIsOpen(isOpen);
     if (isOpen) setError("");
-  }, [isOpen]);
+  }
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -84,7 +90,7 @@ export default function CertificateModal({ isOpen, onClose, certificate }: Certi
                 type="button"
                 onClick={handleDownload}
                 disabled={loading}
-                className="inline-flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-bold text-slate-950 bg-gradient-to-r from-brand-gold to-amber-400 hover:from-amber-400 hover:to-brand-gold shadow-sm transition-all duration-200 disabled:opacity-60"
+                className="inline-flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-bold text-slate-950 bg-linear-to-r from-brand-gold to-amber-400 hover:from-amber-400 hover:to-brand-gold shadow-sm transition-all duration-200 disabled:opacity-60"
               >
                 <HiOutlineDownload className="text-base" />
                 <span>{loading ? "Generating..." : "Download Certificate"}</span>

@@ -20,7 +20,7 @@ export default function RefundPolicyPage() {
         </header>
 
         {/* Notice */}
-        <div className="border border-black/20 p-4 mb-8 text-sm sm:text-base leading-relaxed bg-black/[0.02]">
+        <div className="border border-black/20 p-4 mb-8 text-sm sm:text-base leading-relaxed bg-black/2">
           Please read this Refund &amp; Cancellation Policy carefully before purchasing or enrolling in any course, program, workshop, webinar, or educational service offered by UPtrend Fin Academy.
         </div>
 

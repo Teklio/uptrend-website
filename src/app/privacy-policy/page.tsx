@@ -20,7 +20,7 @@ export default function PrivacyPolicyPage() {
         </header>
 
         {/* Notice */}
-        <div className="border border-black/20 p-4 mb-8 text-sm sm:text-base leading-relaxed bg-black/[0.02]">
+        <div className="border border-black/20 p-4 mb-8 text-sm sm:text-base leading-relaxed bg-black/2">
           <strong>Agreement to Terms:</strong> By accessing or using our website or enrolling in our courses, you agree to the practices described in this Privacy Policy.
         </div>
 

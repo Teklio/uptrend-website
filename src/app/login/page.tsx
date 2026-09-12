@@ -4,6 +4,8 @@ import React, { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
+import { useForm, FormProvider, Controller } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { motion } from "framer-motion";
 import {
   HiOutlineMail,
@@ -15,33 +17,25 @@ import Input from "@/components/Input";
 import { useAuth } from "@/context/AuthContext";
 import { ApiError } from "@/lib/api";
 import { resendVerification } from "@/services/auth.service";
+import { loginSchema, LoginSchemaType } from "@/schemas/auth.schema";
 
 export default function LoginPage() {
   const router = useRouter();
   const { login } = useAuth();
-  const [formData, setFormData] = useState({
-    email: "",
-    password: "",
-    rememberMe: false,
-  });
-  const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [needsVerification, setNeedsVerification] = useState(false);
   const [resendState, setResendState] = useState<"idle" | "sending" | "sent">("idle");
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const form = useForm<LoginSchemaType>({
+    resolver: zodResolver(loginSchema),
+    defaultValues: { email: "", password: "", rememberMe: false },
+  });
+
+  const onSubmit = async (values: LoginSchemaType) => {
     setError("");
     setNeedsVerification(false);
-
-    if (!formData.email || !formData.password) {
-      setError("Please enter both email and password.");
-      return;
-    }
-
-    setLoading(true);
     try {
-      await login(formData.email, formData.password);
+      await login(values.email, values.password);
       router.push("/dashboard");
     } catch (err) {
       if (err instanceof ApiError) {
@@ -50,15 +44,13 @@ export default function LoginPage() {
       } else {
         setError("Something went wrong. Please try again.");
       }
-    } finally {
-      setLoading(false);
     }
   };
 
   const handleResend = async () => {
     setResendState("sending");
     try {
-      await resendVerification(formData.email);
+      await resendVerification(form.getValues("email"));
       setResendState("sent");
     } catch {
       setResendState("idle");
@@ -66,7 +58,7 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-[85vh] w-full flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 bg-gradient-to-b from-slate-50/90 via-white to-slate-50/70 relative overflow-hidden">
+    <div className="min-h-[85vh] w-full flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 bg-linear-to-b from-slate-50/90 via-white to-slate-50/70 relative overflow-hidden">
       {/* Ambient background glows */}
       <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-full max-w-4xl h-[450px] pointer-events-none -z-10">
         <div className="absolute top-0 left-1/4 w-72 h-72 rounded-full bg-brand-gold/15 blur-[100px]" />
@@ -125,64 +117,52 @@ export default function LoginPage() {
           )}
 
           {/* Form */}
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <Input
-              label="Email Address"
-              type="email"
-              required
-              value={formData.email}
-              onChange={(e) =>
-                setFormData({ ...formData, email: e.target.value })
-              }
-              leftIcon={<HiOutlineMail />}
-            />
+          <FormProvider {...form}>
+            <form onSubmit={(e) => void form.handleSubmit(onSubmit)(e)} className="space-y-4">
+              <Input name="email" label="Email Address" type="email" required leftIcon={<HiOutlineMail />} />
 
-            <Input
-              label="Password"
-              type="password"
-              required
-              value={formData.password}
-              onChange={(e) =>
-                setFormData({ ...formData, password: e.target.value })
-              }
-              leftIcon={<HiOutlineLockClosed />}
-            />
+              <Input name="password" label="Password" type="password" required leftIcon={<HiOutlineLockClosed />} />
 
-            {/* Remember Me & Forgot Password */}
-            <div className="flex items-center justify-between text-xs sm:text-sm pt-1">
-              <label className="flex items-center gap-2 cursor-pointer select-none text-slate-600">
-                <input
-                  type="checkbox"
-                  checked={formData.rememberMe}
-                  onChange={(e) =>
-                    setFormData({ ...formData, rememberMe: e.target.checked })
-                  }
-                  className="rounded border-slate-300 text-brand-navy focus:ring-brand-navy/20 h-4 w-4"
+              {/* Remember Me & Forgot Password */}
+              <div className="flex items-center justify-between text-xs sm:text-sm pt-1">
+                <Controller
+                  name="rememberMe"
+                  control={form.control}
+                  render={({ field }) => (
+                    <label className="flex items-center gap-2 cursor-pointer select-none text-slate-600">
+                      <input
+                        type="checkbox"
+                        checked={field.value}
+                        onChange={(e) => field.onChange(e.target.checked)}
+                        className="rounded border-slate-300 text-brand-navy focus:ring-brand-navy/20 h-4 w-4"
+                      />
+                      <span>Remember me</span>
+                    </label>
+                  )}
                 />
-                <span>Remember me</span>
-              </label>
 
-              <Link
-                href="/forgot-password"
-                className="font-semibold text-brand-navy hover:text-brand-gold-dark transition-colors"
+                <Link
+                  href="/forgot-password"
+                  className="font-semibold text-brand-navy hover:text-brand-gold-dark transition-colors"
+                >
+                  Forgot Password?
+                </Link>
+              </div>
+
+              {/* Submit Button */}
+              <button
+                type="submit"
+                disabled={form.formState.isSubmitting}
+                className="group relative w-full inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-xl text-sm font-bold text-slate-950 bg-linear-to-r from-brand-gold via-amber-400 to-brand-gold hover:from-amber-400 hover:to-brand-gold shadow-md shadow-brand-gold/25 transition-all duration-200 hover:scale-[1.01] active:scale-[0.99] disabled:opacity-60 cursor-pointer overflow-hidden mt-2"
               >
-                Forgot Password?
-              </Link>
-            </div>
+                <span className="text-sm md:text-lg">{form.formState.isSubmitting ? "Signing in..." : "Login"}</span>
+                <HiOutlineArrowRight className="text-sm md:text-lg transition-transform duration-200 group-hover:translate-x-1" />
 
-            {/* Submit Button */}
-            <button
-              type="submit"
-              disabled={loading}
-              className="group relative w-full inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-xl text-sm font-bold text-slate-950 bg-gradient-to-r from-brand-gold via-amber-400 to-brand-gold hover:from-amber-400 hover:to-brand-gold shadow-md shadow-brand-gold/25 transition-all duration-200 hover:scale-[1.01] active:scale-[0.99] disabled:opacity-60 cursor-pointer overflow-hidden mt-2"
-            >
-              <span className="text-sm md:text-lg">{loading ? "Signing in..." : "Login"}</span>
-              <HiOutlineArrowRight className="text-sm md:text-lg transition-transform duration-200 group-hover:translate-x-1" />
-
-              {/* Shimmer */}
-              <div className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/40 to-transparent group-hover:animate-[shimmer_1.5s_infinite]" />
-            </button>
-          </form>
+                {/* Shimmer */}
+                <div className="absolute inset-0 -translate-x-full bg-linear-to-r from-transparent via-white/40 to-transparent group-hover:animate-[shimmer_1.5s_infinite]" />
+              </button>
+            </form>
+          </FormProvider>
 
           {/* Bottom Link */}
           <div className="mt-8 pt-6 border-t border-slate-100 text-center text-xs sm:text-sm text-slate-600">

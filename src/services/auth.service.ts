@@ -6,7 +6,7 @@ export const getMe = () => api.get<{ user: User }>("/user/auth/me");
 export const login = (data: { email: string; password: string }) =>
   api.post<{ user: User }>("/user/auth/login", data);
 
-export const register = (data: { email: string; password: string }) =>
+export const register = (data: { email: string; password: string; name?: string }) =>
   api.post<{ id: string; email: string }>("/user/auth/register", data);
 
 export const logout = () => api.post<void>("/user/auth/logout");

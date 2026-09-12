@@ -25,9 +25,9 @@ export default function CoursesPage() {
   }, [search]);
 
   return (
-    <div className="min-h-screen pt-10 pb-24 bg-[#f8fafc] relative overflow-hidden">
+    <div className="min-h-screen pt-10 pb-24 bg-surface-muted relative overflow-hidden">
       {/* Background Ambient Glow */}
-      <div className="absolute top-10 left-1/2 -translate-x-1/2 w-[900px] h-[500px] bg-gradient-to-b from-brand-gold/15 via-brand-navy/10 to-transparent rounded-full blur-[140px] pointer-events-none -z-10" />
+      <div className="absolute top-10 left-1/2 -translate-x-1/2 w-[900px] h-[500px] bg-linear-to-b from-brand-gold/15 via-brand-navy/10 to-transparent rounded-full blur-[140px] pointer-events-none -z-10" />
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Section Header */}
@@ -39,7 +39,7 @@ export default function CoursesPage() {
             className="text-3xl sm:text-5xl font-black text-slate-950 tracking-tight leading-[1.15] mb-4"
           >
             Explore Our <span className="text-brand-navy">Trading</span>{" "}
-            <span className="bg-gradient-to-r from-brand-gold to-amber-500 bg-clip-text text-transparent">
+            <span className="bg-linear-to-r from-brand-gold to-amber-500 bg-clip-text text-transparent">
               Programs
             </span>
           </motion.h1>
@@ -79,7 +79,7 @@ export default function CoursesPage() {
                   className="group block bg-white rounded-2xl border border-slate-200/90 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 overflow-hidden flex flex-col h-full"
                 >
                   {/* Thumbnail Image */}
-                  <div className="relative w-full aspect-[16/9] bg-slate-900 overflow-hidden">
+                  <div className="relative w-full aspect-video bg-slate-900 overflow-hidden">
                     {course.primaryImageUrl ? (
                       // eslint-disable-next-line @next/next/no-img-element -- signed S3 URL, host/query vary per environment
                       <img
@@ -106,13 +106,13 @@ export default function CoursesPage() {
                       <p className="text-xs text-slate-500 font-medium mb-1 truncate">{course.mentorName}</p>
 
                       <div className="flex items-center gap-2">
-                        {course.actualPrice > course.price && (
+                        {Number(course.actualPrice) > Number(course.price) && (
                           <span className="text-xs text-slate-400 line-through">
-                            ₹{course.actualPrice.toLocaleString("en-IN")}
+                            ₹{Number(course.actualPrice).toLocaleString("en-IN")}
                           </span>
                         )}
                         <span className="text-sm sm:text-base font-bold text-emerald-700">
-                          ₹{course.price.toLocaleString("en-IN")}
+                          ₹{Number(course.price).toLocaleString("en-IN")}
                         </span>
                       </div>
                     </div>
