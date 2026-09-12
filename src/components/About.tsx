@@ -97,7 +97,7 @@ export default function About() {
             className="lg:col-span-6 relative"
           >
             <div className="relative rounded-3xl p-3 bg-white border border-slate-200/90 shadow-[0_20px_50px_rgba(0,43,127,0.08)] overflow-hidden">
-              <div className="relative aspect-[4/3] w-full rounded-2xl overflow-hidden bg-slate-900">
+              <div className="relative aspect-4/3 w-full rounded-2xl overflow-hidden bg-slate-900">
                 <Image
                   src="/about-lab.jpg"
                   alt="UPtrend Financial Market Education Analytics Lab"
@@ -105,7 +105,7 @@ export default function About() {
                   sizes="(max-width: 1024px) 100vw, 600px"
                   className="object-cover object-center transition-transform duration-700 hover:scale-105"
                 />
-                <div className="absolute inset-0 bg-gradient-to-t from-slate-950/70 via-transparent to-white/10 pointer-events-none" />
+                <div className="absolute inset-0 bg-linear-to-t from-slate-950/70 via-transparent to-white/10 pointer-events-none" />
 
                 <div className="absolute bottom-4 left-4 right-4 p-4 rounded-xl bg-slate-950/85 backdrop-blur-md border border-white/15 flex items-center justify-between text-white">
                   <div>

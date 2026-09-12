@@ -9,8 +9,6 @@ import {
   HiOutlineMail,
   HiOutlineLocationMarker,
   HiOutlineClock,
-  HiOutlineArrowRight,
-  HiOutlineShieldCheck,
 } from "react-icons/hi";
 import {
   FaInstagram,

@@ -124,7 +124,7 @@ export default function Testimonials() {
   );
 
   return (
-    <section className="relative py-20 sm:py-28 bg-gradient-to-b from-white via-slate-50/80 to-slate-100/90 overflow-hidden">
+    <section className="relative py-20 sm:py-28 bg-linear-to-b from-white via-slate-50/80 to-slate-100/90 overflow-hidden">
       {/* Background Decorative Lighting */}
       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[500px] bg-brand-gold/10 rounded-full blur-[140px] pointer-events-none -z-10" />
 
@@ -134,7 +134,7 @@ export default function Testimonials() {
           <div className="text-center md:text-left max-w-2xl">
             <h2 className="text-3xl sm:text-4xl md:text-5xl font-black text-slate-950 tracking-tight leading-[1.15] mb-4">
               Real Stories From <span className="text-brand-navy">Kerala&apos;s Active</span>{" "}
-              <span className="bg-gradient-to-r from-brand-gold to-amber-500 bg-clip-text text-transparent">
+              <span className="bg-linear-to-r from-brand-gold to-amber-500 bg-clip-text text-transparent">
                 Traders
               </span>
             </h2>
@@ -196,7 +196,7 @@ export default function Testimonials() {
                   className="group relative flex flex-col justify-between p-6 sm:p-7 rounded-3xl bg-white/95 backdrop-blur-xl border border-slate-200/90 shadow-[0_10px_35px_rgba(0,43,127,0.05)] hover:shadow-[0_16px_50px_rgba(0,43,127,0.1)] hover:-translate-y-1 transition-all duration-300 h-full"
                 >
                   {/* Top Accent Stripe */}
-                  <div className="absolute top-0 inset-x-8 h-1 bg-gradient-to-r from-brand-gold via-amber-400 to-brand-navy rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                  <div className="absolute top-0 inset-x-8 h-1 bg-linear-to-r from-brand-gold via-amber-400 to-brand-navy rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
 
                   <div>
                     {/* Card Header: 5 Stars Rating */}
@@ -215,7 +215,7 @@ export default function Testimonials() {
                   {/* Card Footer: Student Info */}
                   <div className="pt-4 border-t border-slate-100 flex items-center gap-3">
                     <div
-                      className={`w-11 h-11 rounded-full bg-gradient-to-br ${item.avatarBg} text-white font-black text-sm flex items-center justify-center shadow-md shrink-0`}
+                      className={`w-11 h-11 rounded-full bg-linear-to-br ${item.avatarBg} text-white font-black text-sm flex items-center justify-center shadow-md shrink-0`}
                     >
                       {item.avatar}
                     </div>

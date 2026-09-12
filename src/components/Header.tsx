@@ -5,13 +5,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
-import {
-  HiOutlineUser,
-  HiOutlineArrowRight,
-  HiOutlineSparkles,
-  HiXMark,
-  HiOutlineAcademicCap,
-} from "react-icons/hi2";
+import { HiOutlineUser, HiOutlineArrowRight, HiXMark } from "react-icons/hi2";
 import { useAuth } from "@/context/AuthContext";
 
 interface NavItem {
@@ -43,9 +37,15 @@ export default function Header() {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  useEffect(() => {
+  // Closes the mobile menu the moment the route changes — compared during
+  // render (React's documented pattern for resetting state when a prop
+  // changes) rather than in an effect, since Header persists across
+  // navigations instead of unmounting.
+  const [prevPathname, setPrevPathname] = useState(pathname);
+  if (pathname !== prevPathname) {
+    setPrevPathname(pathname);
     setMobileMenuOpen(false);
-  }, [pathname]);
+  }
 
   // Lock scroll on mobile menu
   useEffect(() => {
@@ -63,6 +63,8 @@ export default function Header() {
   if (pathname.startsWith("/dashboard")) {
     return null;
   }
+
+  const visibleNavItems = isLoggedIn ? navItems.filter((item) => item.href !== "/enrollment") : navItems;
 
   return (
     <>
@@ -100,7 +102,7 @@ export default function Header() {
               className="hidden lg:flex items-center gap-1.5 px-3 py-2 rounded-full bg-slate-50/90 border border-slate-200/70 shadow-[inset_0_1px_3px_rgba(0,0,0,0.04)]"
               onMouseLeave={() => setHoveredIndex(null)}
             >
-              {navItems.map((item, index) => {
+              {visibleNavItems.map((item, index) => {
                 const isActive =
                   pathname === item.href ||
                   (item.href !== "/" && pathname.startsWith(item.href));
@@ -180,21 +182,23 @@ export default function Header() {
               )}
 
               {/* Minimal Premium CTA Button */}
-              <Link
-                href="/enrollment"
-                className="relative group overflow-hidden inline-flex items-center gap-2.5 px-6 py-3 rounded-full text-[15px] font-bold text-slate-950 bg-gradient-to-r from-brand-gold to-amber-400 hover:from-amber-400 hover:to-brand-gold shadow-[0_2px_16px_rgba(245,163,0,0.3)] hover:shadow-[0_4px_24px_rgba(245,163,0,0.45)] transition-all duration-300 hover:scale-[1.02] active:scale-[0.98]"
-              >
-                <span className="relative z-10 flex items-center gap-2 tracking-wide">
-                  <span>Enroll Now</span>
-                  <HiOutlineArrowRight className="text-sm transition-transform duration-300 group-hover:translate-x-1" />
-                </span>
+              {!isLoggedIn && (
+                <Link
+                  href="/enrollment"
+                  className="relative group overflow-hidden inline-flex items-center gap-2.5 px-6 py-3 rounded-full text-[15px] font-bold text-slate-950 bg-linear-to-r from-brand-gold to-amber-400 hover:from-amber-400 hover:to-brand-gold shadow-[0_2px_16px_rgba(245,163,0,0.3)] hover:shadow-[0_4px_24px_rgba(245,163,0,0.45)] transition-all duration-300 hover:scale-[1.02] active:scale-[0.98]"
+                >
+                  <span className="relative z-10 flex items-center gap-2 tracking-wide">
+                    <span>Enroll Now</span>
+                    <HiOutlineArrowRight className="text-sm transition-transform duration-300 group-hover:translate-x-1" />
+                  </span>
 
-                {/* Shimmer effect */}
-                <motion.div
-                  className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/40 to-transparent group-hover:animate-[shimmer_1.5s_infinite]"
-                  initial={false}
-                />
-              </Link>
+                  {/* Shimmer effect */}
+                  <motion.div
+                    className="absolute inset-0 -translate-x-full bg-linear-to-r from-transparent via-white/40 to-transparent group-hover:animate-[shimmer_1.5s_infinite]"
+                    initial={false}
+                  />
+                </Link>
+              )}
             </div>
 
             {/* Mobile / Tablet Menu Button */}
@@ -280,7 +284,7 @@ export default function Header() {
                 <div>
                   {/* Nav links */}
                   <nav className="flex flex-col space-y-1.5">
-                    {navItems.map((item, idx) => {
+                    {visibleNavItems.map((item, idx) => {
                       const isActive =
                         pathname === item.href ||
                         (item.href !== "/" && pathname.startsWith(item.href));
@@ -322,23 +326,36 @@ export default function Header() {
 
                 {/* Footer Action Buttons */}
                 <div className="pt-6 border-t border-slate-100 space-y-3">
-                  <Link
-                    href="/login"
-                    onClick={() => setMobileMenuOpen(false)}
-                    className="flex items-center justify-center gap-2 w-full py-3 rounded-xl border border-slate-300 text-sm font-bold text-slate-800 hover:bg-slate-50 transition-colors"
-                  >
-                    <HiOutlineUser className="text-base text-brand-navy" />
-                    <span>Student Login</span>
-                  </Link>
+                  {isLoggedIn ? (
+                    <Link
+                      href="/dashboard"
+                      onClick={() => setMobileMenuOpen(false)}
+                      className="flex items-center justify-center gap-2 w-full py-3.5 rounded-xl bg-brand-navy text-white text-sm font-bold shadow-md hover:shadow-lg transition-all"
+                    >
+                      <span>Go to Dashboard</span>
+                      <HiOutlineArrowRight className="text-sm" />
+                    </Link>
+                  ) : (
+                    <>
+                      <Link
+                        href="/login"
+                        onClick={() => setMobileMenuOpen(false)}
+                        className="flex items-center justify-center gap-2 w-full py-3 rounded-xl border border-slate-300 text-sm font-bold text-slate-800 hover:bg-slate-50 transition-colors"
+                      >
+                        <HiOutlineUser className="text-base text-brand-navy" />
+                        <span>Student Login</span>
+                      </Link>
 
-                  <Link
-                    href="/enrollment"
-                    onClick={() => setMobileMenuOpen(false)}
-                    className="flex items-center justify-center gap-2 w-full py-3.5 rounded-xl bg-gradient-to-r from-brand-gold via-amber-400 to-brand-gold text-slate-950 text-sm font-bold shadow-md hover:shadow-lg transition-all"
-                  >
-                    <span>Enroll Now</span>
-                    <HiOutlineArrowRight className="text-sm" />
-                  </Link>
+                      <Link
+                        href="/enrollment"
+                        onClick={() => setMobileMenuOpen(false)}
+                        className="flex items-center justify-center gap-2 w-full py-3.5 rounded-xl bg-linear-to-r from-brand-gold via-amber-400 to-brand-gold text-slate-950 text-sm font-bold shadow-md hover:shadow-lg transition-all"
+                      >
+                        <span>Enroll Now</span>
+                        <HiOutlineArrowRight className="text-sm" />
+                      </Link>
+                    </>
+                  )}
                 </div>
               </div>
             </motion.div>

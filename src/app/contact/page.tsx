@@ -1,7 +1,8 @@
 "use client";
 
-import React, { useState } from "react";
-import Link from "next/link";
+import { useState } from "react";
+import { useForm, FormProvider, Controller } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { motion } from "framer-motion";
 import {
   HiOutlineUser,
@@ -9,7 +10,6 @@ import {
   HiOutlinePhone,
   HiOutlineLocationMarker,
   HiOutlineClock,
-  HiOutlineChatAlt2,
   HiOutlineCheckCircle,
   HiOutlineArrowRight,
   HiOutlineShieldCheck,
@@ -17,37 +17,42 @@ import {
 import { FaWhatsapp, FaPhoneAlt } from "react-icons/fa";
 import Input from "@/components/Input";
 import MarqueeBanner from "@/components/MarqueeBanner";
+import { submitContact } from "@/services/contact.service";
+import { ApiError } from "@/lib/api";
+import { applyServerFieldErrors } from "@/lib/formErrors";
+import { contactFormSchema, ContactFormSchemaType } from "@/schemas/contact.schema";
 
 const PHONE_NUMBER = "7907171406";
 const DISPLAY_PHONE = "790 7171 406";
-const LOCATION_ADDRESS = "Bypass Road, Perinthalmanna,  kerala - 679 322";
 
 export default function ContactPage() {
-  const [formData, setFormData] = useState({
-    name: "",
-    email: "",
-    phone: "",
-    message: "",
-  });
-  const [loading, setLoading] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [error, setError] = useState("");
+  const [submittedName, setSubmittedName] = useState("");
+  const [submittedPhone, setSubmittedPhone] = useState("");
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
+  const form = useForm<ContactFormSchemaType>({
+    resolver: zodResolver(contactFormSchema),
+    defaultValues: { name: "", email: "", phone: "", message: "" },
+  });
+
+  const onSubmit = async (values: ContactFormSchemaType) => {
     setError("");
-
-    if (!formData.name || !formData.email || !formData.phone || !formData.message) {
-      setError("Please fill in all fields.");
-      return;
-    }
-
-    setLoading(true);
-    // Simulate inquiry submission
-    setTimeout(() => {
-      setLoading(false);
+    try {
+      await submitContact({
+        fullName: values.name,
+        email: values.email,
+        subject: `Website inquiry from ${values.name} (${values.phone})`,
+        message: values.message,
+      });
+      setSubmittedName(values.name);
+      setSubmittedPhone(values.phone);
       setSubmitted(true);
-    }, 1000);
+    } catch (err) {
+      if (!applyServerFieldErrors(form, err)) {
+        setError(err instanceof ApiError ? err.message : "Could not send your message. Please try again.");
+      }
+    }
   };
 
   const whatsappUrl = `https://wa.me/91${PHONE_NUMBER}?text=Hi%20UPtrend,%20I%20would%20like%20to%20inquire%20about%20your%20trading%20courses.`;
@@ -56,11 +61,11 @@ export default function ContactPage() {
   return (
     <div className="w-full bg-white text-slate-900 font-sans">
       {/* 1. HERO HEADER */}
-      <section className="relative pt-12 pb-16 sm:pt-16 sm:pb-20 lg:pt-20 lg:pb-24 bg-gradient-to-b from-slate-100/90 via-slate-50/70 to-white overflow-hidden">
+      <section className="relative pt-12 pb-16 sm:pt-16 sm:pb-20 lg:pt-20 lg:pb-24 bg-linear-to-b from-slate-100/90 via-slate-50/70 to-white overflow-hidden">
         {/* Ambient lighting */}
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-7xl h-[450px] pointer-events-none -z-10 overflow-hidden">
-          <div className="absolute top-[-10%] left-1/2 -translate-x-1/2 w-[700px] h-[350px] rounded-full bg-gradient-to-b from-brand-gold/15 via-brand-navy/10 to-transparent blur-[130px]" />
-          <div className="absolute inset-0 bg-[linear-gradient(to_right,#e2e8f018_1px,transparent_1px),linear-gradient(to_bottom,#e2e8f018_1px,transparent_1px)] bg-[size:4rem_4rem] [mask-image:radial-gradient(ellipse_70%_60%_at_50%_0%,#000_70%,transparent_100%)]" />
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-7xl h-112.5 pointer-events-none -z-10 overflow-hidden">
+          <div className="absolute top-[-10%] left-1/2 -translate-x-1/2 w-175 h-87.5 rounded-full bg-linear-to-b from-brand-gold/15 via-brand-navy/10 to-transparent blur-[130px]" />
+          <div className="absolute inset-0 bg-[linear-gradient(to_right,#e2e8f018_1px,transparent_1px),linear-gradient(to_bottom,#e2e8f018_1px,transparent_1px)] bg-size-[4rem_4rem] mask-[radial-gradient(ellipse_70%_60%_at_50%_0%,#000_70%,transparent_100%)]" />
         </div>
 
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
@@ -247,11 +252,11 @@ export default function ContactPage() {
                     </div>
 
                     <h4 className="text-xl font-bold text-slate-950">
-                      Thank You, {formData.name}!
+                      Thank You, {submittedName}!
                     </h4>
 
                     <p className="text-sm text-slate-600 max-w-md mx-auto leading-relaxed">
-                      Your inquiry has been successfully received. A representative from UPtrend Perinthalmanna will connect with you on <strong className="text-slate-900 font-semibold">{formData.phone}</strong> shortly.
+                      Your inquiry has been successfully received. A representative from UPtrend Perinthalmanna will connect with you on <strong className="text-slate-900 font-semibold">{submittedPhone}</strong> shortly.
                     </p>
 
                     <div className="pt-4">
@@ -259,7 +264,7 @@ export default function ContactPage() {
                         type="button"
                         onClick={() => {
                           setSubmitted(false);
-                          setFormData({ name: "", email: "", phone: "", message: "" });
+                          form.reset();
                         }}
                         className="px-6 py-3 rounded-xl text-sm font-bold text-slate-950 bg-brand-gold hover:bg-brand-gold-hover transition-colors shadow-sm"
                       >
@@ -268,83 +273,101 @@ export default function ContactPage() {
                     </div>
                   </motion.div>
                 ) : (
-                  <form onSubmit={handleSubmit} className="space-y-4">
-                    {error && (
-                      <div className="p-3.5 rounded-xl bg-red-50 border border-red-200 text-xs font-medium text-red-600">
-                        {error}
+                  <FormProvider {...form}>
+                    <form onSubmit={(e) => void form.handleSubmit(onSubmit)(e)} className="space-y-4">
+                      {error && (
+                        <div className="p-3.5 rounded-xl bg-red-50 border border-red-200 text-xs font-medium text-red-600">
+                          {error}
+                        </div>
+                      )}
+
+                      <Input name="name" label="Full Name" type="text" required leftIcon={<HiOutlineUser />} />
+
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <Input name="email" label="Email Address" type="email" required leftIcon={<HiOutlineMail />} />
+
+                        <Controller
+                          name="phone"
+                          control={form.control}
+                          render={({ field, fieldState }) => (
+                            <div className="w-full flex flex-col gap-1.5 text-left">
+                              <label className="text-xs sm:text-sm font-semibold text-slate-800 flex items-center justify-between">
+                                <span>Phone Number</span>
+                                <span className="text-red-500 font-normal text-xs">*</span>
+                              </label>
+                              <div className="relative flex items-center">
+                                <div className="absolute left-3.5 text-slate-400 text-lg pointer-events-none flex items-center justify-center">
+                                  <HiOutlinePhone />
+                                </div>
+                                <input
+                                  name={field.name}
+                                  ref={field.ref}
+                                  value={field.value}
+                                  onBlur={field.onBlur}
+                                  onChange={(e) => field.onChange(e.target.value.replace(/\D/g, "").slice(0, 10))}
+                                  type="tel"
+                                  inputMode="numeric"
+                                  maxLength={10}
+                                  className={`w-full rounded-xl border bg-white pl-11 pr-4 py-3 text-sm text-slate-900 transition-all duration-200 focus:outline-none focus:ring-2 ${
+                                    fieldState.error
+                                      ? "border-red-400 focus:border-red-500 focus:ring-red-100"
+                                      : "border-slate-200/90 hover:border-slate-300 focus:border-brand-navy focus:ring-brand-navy/10"
+                                  }`}
+                                />
+                              </div>
+                              {fieldState.error && (
+                                <p className="text-xs font-medium text-red-500 mt-0.5">{fieldState.error.message}</p>
+                              )}
+                            </div>
+                          )}
+                        />
                       </div>
-                    )}
 
-                    <Input
-                      label="Full Name"
-                      type="text"
-                      required
-                      value={formData.name}
-                      onChange={(e) =>
-                        setFormData({ ...formData, name: e.target.value })
-                      }
-                      leftIcon={<HiOutlineUser />}
-                    />
+                      {/* Message Area */}
+                      <Controller
+                        name="message"
+                        control={form.control}
+                        render={({ field, fieldState }) => (
+                          <div className="flex flex-col gap-1.5 text-left">
+                            <label
+                              htmlFor="message"
+                              className="text-xs sm:text-sm font-semibold text-slate-800 flex items-center justify-between"
+                            >
+                              <span>Your Message / Query</span>
+                              <span className="text-red-500 font-normal text-xs">*</span>
+                            </label>
 
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                      <Input
-                        label="Email Address"
-                        type="email"
-                        required
-                        value={formData.email}
-                        onChange={(e) =>
-                          setFormData({ ...formData, email: e.target.value })
-                        }
-                        leftIcon={<HiOutlineMail />}
+                            <textarea
+                              id="message"
+                              rows={4}
+                              {...field}
+                              className={`w-full rounded-xl border bg-white px-4 py-3 text-sm text-slate-900 transition-all duration-200 focus:outline-none focus:ring-2 resize-none ${
+                                fieldState.error
+                                  ? "border-red-400 focus:border-red-500 focus:ring-red-100"
+                                  : "border-slate-200/90 hover:border-slate-300 focus:border-brand-navy focus:ring-brand-navy/10"
+                              }`}
+                            />
+                            {fieldState.error && (
+                              <p className="text-xs font-medium text-red-500 mt-0.5">{fieldState.error.message}</p>
+                            )}
+                          </div>
+                        )}
                       />
 
-                      <Input
-                        label="Phone Number"
-                        type="tel"
-                        required
-                        value={formData.phone}
-                        onChange={(e) =>
-                          setFormData({ ...formData, phone: e.target.value })
-                        }
-                        leftIcon={<HiOutlinePhone />}
-                      />
-                    </div>
-
-                    {/* Message Area */}
-                    <div className="flex flex-col gap-1.5 text-left">
-                      <label
-                        htmlFor="message"
-                        className="text-xs sm:text-sm font-semibold text-slate-800 flex items-center justify-between"
+                      {/* Submit Button */}
+                      <button
+                        type="submit"
+                        disabled={form.formState.isSubmitting}
+                        className="group relative w-full inline-flex items-center justify-center gap-2 px-7 py-4 rounded-xl text-base font-bold text-slate-950 bg-linear-to-r from-brand-gold via-amber-400 to-brand-gold hover:from-amber-400 hover:to-brand-gold shadow-md shadow-brand-gold/25 transition-all duration-200 hover:scale-[1.01] active:scale-[0.99] disabled:opacity-60 cursor-pointer overflow-hidden mt-3"
                       >
-                        <span>Your Message / Query</span>
-                        <span className="text-red-500 font-normal text-xs">*</span>
-                      </label>
+                        <span>{form.formState.isSubmitting ? "Sending Message..." : "Submit Message"}</span>
+                        <HiOutlineArrowRight className="text-base transition-transform duration-200 group-hover:translate-x-1" />
 
-                      <textarea
-                        id="message"
-                        rows={4}
-                        required
-                        value={formData.message}
-                        onChange={(e) =>
-                          setFormData({ ...formData, message: e.target.value })
-                        }
-                        className="w-full rounded-xl border border-slate-200/90 bg-white px-4 py-3 text-sm text-slate-900 transition-all duration-200 focus:outline-none focus:border-brand-navy focus:ring-2 focus:ring-brand-navy/10 hover:border-slate-300 resize-none"
-                      />
-                    </div>
-
-                    {/* Submit Button */}
-                    <button
-                      type="submit"
-                      disabled={loading}
-                      className="group relative w-full inline-flex items-center justify-center gap-2 px-7 py-4 rounded-xl text-base font-bold text-slate-950 bg-gradient-to-r from-brand-gold via-amber-400 to-brand-gold hover:from-amber-400 hover:to-brand-gold shadow-md shadow-brand-gold/25 transition-all duration-200 hover:scale-[1.01] active:scale-[0.99] disabled:opacity-60 cursor-pointer overflow-hidden mt-3"
-                    >
-                      <span>{loading ? "Sending Message..." : "Submit Message"}</span>
-                      <HiOutlineArrowRight className="text-base transition-transform duration-200 group-hover:translate-x-1" />
-
-                      {/* Shimmer */}
-                      <div className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/40 to-transparent group-hover:animate-[shimmer_1.5s_infinite]" />
-                    </button>
-                  </form>
+                        {/* Shimmer */}
+                        <div className="absolute inset-0 -translate-x-full bg-linear-to-r from-transparent via-white/40 to-transparent group-hover:animate-[shimmer_1.5s_infinite]" />
+                      </button>
+                    </form>
+                  </FormProvider>
                 )}
 
                 <div className="mt-6 pt-5 border-t border-slate-100 flex items-center justify-center gap-2 text-xs text-slate-500">

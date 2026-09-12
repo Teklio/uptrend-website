@@ -18,6 +18,9 @@ export const metadata: Metadata = {
     default: "UPtrend | Premier Financial Market Education Institute",
     template: "%s | UPtrend Financial Academy",
   },
+  icons: {
+    icon: "/logo.png",
+  },
   description:
     "Master Nifty 50 Options, Futures, Swing Trading & Forex with institutional Smart Money Concepts (SMC) and strict risk management. Live mentorship in Malayalam & English by Nikhil Mathew.",
   keywords: [
