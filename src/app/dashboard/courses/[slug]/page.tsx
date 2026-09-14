@@ -1,18 +1,21 @@
 "use client";
 
-import { useState, use, useEffect, useCallback } from "react";
+import { useState, use, useEffect, useCallback, useRef } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import {
   HiOutlineArrowLeft,
   HiOutlinePlay,
   HiOutlineChevronDown,
   HiOutlineChevronRight,
   HiOutlineChevronLeft,
+  HiOutlineX,
 } from "react-icons/hi";
 import { FiCheck } from "react-icons/fi";
 import { getEnrolledCourse, getVideoPlayback, updateVideoProgress } from "@/services/learn.service";
 import { EnrolledCourseDetail, EnrolledModule, EnrolledVideo, VideoPlayback } from "@/types/learn.type";
 import { ApiError } from "@/lib/api";
+import { loadPlayerJsScript, PlayerJsInstance } from "@/lib/playerjs";
 
 interface PageProps {
   params: Promise<{ slug: string }>;
@@ -101,14 +104,162 @@ function PlaylistRow({
   );
 }
 
+// Save page / view source / print — Chromium and Firefox still let page JS
+// suppress these plain Ctrl/Cmd combos.
+const BLOCKED_SHORTCUT_KEYS = new Set(["s", "u", "p"]);
+// DevTools shortcuts — Ctrl/Cmd+Shift+I/J/C (inspector/console/element-pick)
+// and F12. Current Chrome/Edge intentionally ignore preventDefault() on
+// these (hardened specifically against pages trying this), so the
+// DevTools-open detector below is the real backstop there; this still works
+// in Firefox and some other browsers, so it's kept as a first line.
+const BLOCKED_SHIFT_SHORTCUT_KEYS = new Set(["i", "j", "c", "k"]);
+
 function VideoPlayer({ videoId }: { videoId: string }) {
+  const router = useRouter();
   const [playback, setPlayback] = useState<VideoPlayback | null>(null);
+  const iframeRef = useRef<HTMLIFrameElement | null>(null);
+  const containerRef = useRef<HTMLDivElement | null>(null);
+  const playerRef = useRef<PlayerJsInstance | null>(null);
+  const violationTriggeredRef = useRef(false);
+
+  // Escalation for every real (non-cosmetic) guard below: pause, tell the
+  // learner why via a blocking alert (guaranteed visible even mid-navigation,
+  // unlike a toast), and send them back to the dashboard. Guarded by a ref
+  // so a burst of events (e.g. the devtools-poll interval firing repeatedly
+  // while the panel stays open) only triggers this once.
+  const triggerViolation = useCallback(
+    (message: string) => {
+      if (violationTriggeredRef.current) return;
+      violationTriggeredRef.current = true;
+      playerRef.current?.pause();
+      window.alert(`${message} You've been returned to your dashboard.`);
+      router.push("/dashboard");
+    },
+    [router],
+  );
 
   useEffect(() => {
     getVideoPlayback(videoId)
       .then(setPlayback)
       .catch(() => setPlayback(null));
   }, [videoId]);
+
+  // "Theater mode" — a CSS overlay that fills the viewport, not the real
+  // Fullscreen API (deliberately: this app's own on-page keyboard guards
+  // already run at the window/document level regardless of real vs CSS
+  // fullscreen, so switching away from requestFullscreen() doesn't change
+  // what those guards can or can't see — it's a viewing-experience choice,
+  // not a protection one). Exited only via the explicit close button, since
+  // there's no browser-guaranteed Esc handling like real fullscreen has.
+  const [isMaximized, setIsMaximized] = useState(false);
+
+  // Pauses playback while the tab is backgrounded (soft deterrent against
+  // recording via a second window) and opens theater mode when playback
+  // starts.
+  useEffect(() => {
+    if (!playback) return;
+
+    let cancelled = false;
+
+    loadPlayerJsScript().then((loaded) => {
+      if (!loaded || cancelled || !iframeRef.current || !window.playerjs) return;
+      const player = new window.playerjs.Player(iframeRef.current);
+      playerRef.current = player;
+      player.on("play", () => setIsMaximized(true));
+    });
+
+    const handleVisibilityChange = () => {
+      if (document.hidden) playerRef.current?.pause();
+    };
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+
+    // Broader than visibilitychange (which only fires on tab-switch/minimize)
+    // — this also catches focus leaving the browser window entirely, e.g.
+    // another app's window (or the Game Bar overlay) being clicked into
+    // while this window stays visibly on screen. It does NOT catch a
+    // recording shortcut that never takes focus in the first place.
+    const handleWindowBlur = () => playerRef.current?.pause();
+    window.addEventListener("blur", handleWindowBlur);
+
+    return () => {
+      cancelled = true;
+      playerRef.current = null;
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+      window.removeEventListener("blur", handleWindowBlur);
+    };
+  }, [playback]);
+
+  const handleClose = () => {
+    playerRef.current?.pause();
+    setIsMaximized(false);
+  };
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "F12") {
+        e.preventDefault();
+        triggerViolation("A restricted keyboard shortcut was used.");
+        return;
+      }
+      const key = e.key.toLowerCase();
+      const isModified = e.ctrlKey || e.metaKey;
+      if (isModified && !e.shiftKey && BLOCKED_SHORTCUT_KEYS.has(key)) {
+        e.preventDefault();
+        triggerViolation("A restricted keyboard shortcut was used.");
+      }
+      if (isModified && e.shiftKey && BLOCKED_SHIFT_SHORTCUT_KEYS.has(key)) {
+        e.preventDefault();
+        triggerViolation("A restricted keyboard shortcut was used.");
+      }
+    };
+    const handleKeyUp = (e: KeyboardEvent) => {
+      if (e.key !== "PrintScreen") return;
+      triggerViolation("A screenshot attempt was detected.");
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    window.addEventListener("keyup", handleKeyUp);
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+      window.removeEventListener("keyup", handleKeyUp);
+    };
+  }, [triggerViolation]);
+
+  // Bunny's iframe runs a small script we inject via the library's own
+  // "Custom HTML head" player setting — same-origin *inside that document*,
+  // so it can see keystrokes our page never could (the video having focus
+  // is exactly when our own window-level listeners above go blind). It
+  // reports PrintScreen back to us via postMessage, the one sanctioned way
+  // for a cross-origin frame to talk to its parent.
+  useEffect(() => {
+    const handleMessage = (e: MessageEvent) => {
+      if (e.origin !== "https://iframe.mediadelivery.net") return;
+      if (e.data?.source !== "uptrend-video-guard") return;
+      if (e.data.reason === "screenshot") {
+        triggerViolation("A screenshot attempt was detected.");
+      }
+    };
+    window.addEventListener("message", handleMessage);
+    return () => window.removeEventListener("message", handleMessage);
+  }, [triggerViolation]);
+
+  // Docked-right/left DevTools panels shrink the inner viewport width
+  // relative to the outer window. Width-only, deliberately: the height gap
+  // (tab strip + bookmarks bar + omnibox chrome) is commonly 100-150px on
+  // its own with DevTools closed, so a height-based check false-triggers
+  // on completely normal browser chrome — the width gap stays near-zero
+  // unless DevTools is actually docked to a side, which is the reliable
+  // signal. Trade-off: a DevTools panel docked to the bottom isn't caught.
+  useEffect(() => {
+    const THRESHOLD = 220;
+    const check = () => {
+      if (window.outerWidth - window.innerWidth > THRESHOLD) {
+        triggerViolation("Developer tools were opened.");
+      }
+    };
+    check();
+    const interval = window.setInterval(check, 1000);
+    return () => window.clearInterval(interval);
+  }, [triggerViolation]);
 
   if (!playback) {
     return (
@@ -119,12 +270,33 @@ function VideoPlayer({ videoId }: { videoId: string }) {
   }
 
   return (
-    <iframe
-      src={playback.embedUrl}
-      className="w-full h-full"
-      allow="accelerometer; gyroscope; autoplay; encrypted-media; picture-in-picture"
-      allowFullScreen
-    />
+    <div
+      ref={containerRef}
+      className={
+        isMaximized
+          ? "fixed inset-0 z-100 bg-black"
+          : "absolute inset-0 bg-black"
+      }
+      onContextMenu={(e) => e.preventDefault()}
+    >
+      <iframe
+        ref={iframeRef}
+        src={playback.embedUrl}
+        className="w-full h-full"
+        allow="accelerometer; gyroscope; autoplay; encrypted-media; picture-in-picture"
+        allowFullScreen
+      />
+      {isMaximized && (
+        <button
+          type="button"
+          onClick={handleClose}
+          aria-label="Exit theater mode"
+          className="absolute top-3 right-3 sm:top-4 sm:right-4 w-9 h-9 rounded-full bg-black/60 hover:bg-black/80 text-white flex items-center justify-center transition-colors cursor-pointer"
+        >
+          <HiOutlineX className="text-lg" />
+        </button>
+      )}
+    </div>
   );
 }
 
@@ -419,7 +591,10 @@ function CourseLearningView({ courseId }: { courseId: string }) {
         {/* MAIN VIDEO PLAYER */}
         <main className="flex-1 overflow-y-auto p-3 sm:p-6 lg:p-8">
           <div className={`mx-auto space-y-4 sm:space-y-6 transition-all duration-300 ${isSidebarCollapsed ? "max-w-6xl" : "max-w-4xl"}`}>
-            <div className="bg-black rounded-xl sm:rounded-2xl overflow-hidden shadow-lg relative aspect-video w-full">
+            <div
+              className="bg-black rounded-xl sm:rounded-2xl overflow-hidden shadow-lg relative aspect-video w-full select-none"
+              onContextMenu={(e) => e.preventDefault()}
+            >
               {activeVideoId && <VideoPlayer key={activeVideoId} videoId={activeVideoId} />}
             </div>
 
