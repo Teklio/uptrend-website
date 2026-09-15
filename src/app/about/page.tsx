@@ -6,7 +6,6 @@ import Link from "next/link";
 import { motion } from "framer-motion";
 import { HiOutlineArrowRight } from "react-icons/hi";
 import { FiLayers, FiCpu, FiBarChart2, FiShield } from "react-icons/fi";
-import MarqueeBanner from "@/components/MarqueeBanner";
 
 const methodologyPillars = [
   {
@@ -82,9 +81,6 @@ export default function AboutPage() {
           </motion.p>
         </div>
       </section>
-
-      {/* MARQUEE BANNER */}
-      <MarqueeBanner />
 
       {/* 2. OUR STORY & FOUNDATION */}
       <section className="py-16 sm:py-24 bg-white">

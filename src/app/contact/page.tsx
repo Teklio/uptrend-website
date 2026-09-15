@@ -16,7 +16,6 @@ import {
 } from "react-icons/hi";
 import { FaWhatsapp, FaPhoneAlt } from "react-icons/fa";
 import Input from "@/components/Input";
-import MarqueeBanner from "@/components/MarqueeBanner";
 import { submitContact } from "@/services/contact.service";
 import { ApiError } from "@/lib/api";
 import { applyServerFieldErrors } from "@/lib/formErrors";
@@ -98,9 +97,6 @@ export default function ContactPage() {
           </motion.p>
         </div>
       </section>
-
-      {/* MARQUEE RUNNER */}
-      <MarqueeBanner />
 
       {/* 2. CONTACT DETAILS & FORM SECTION */}
       <section className="py-16 sm:py-24 bg-white relative">

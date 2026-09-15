@@ -24,7 +24,6 @@ export default function LiveMarketTicker() {
   const [selectedCategory, setSelectedCategory] = useState<CategoryType>("All");
   const [selectedItemForChart, setSelectedItemForChart] = useState<MarketItem | null>(null);
   const [viewMode, setViewMode] = useState<"ticker" | "grid">("ticker");
-  const [lastUpdated, setLastUpdated] = useState<string>("");
 
   const fetchData = useCallback(async (isManual = false) => {
     if (isManual) setIsRefreshing(true);
@@ -33,9 +32,6 @@ export default function LiveMarketTicker() {
       const json = await res.json();
       if (json.success && Array.isArray(json.data) && json.data.length > 0) {
         setMarketData(json.data);
-        setLastUpdated(
-          new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" })
-        );
       }
     } catch (err) {
       console.error("Failed to load market data:", err);
@@ -48,12 +44,7 @@ export default function LiveMarketTicker() {
   }, []);
 
   useEffect(() => {
-    // Fetch-on-mount + poll is the async external-data-source pattern the
-    // rule's own guidance endorses; it still flags it because the setState
-    // calls live behind an await inside fetchData, not because it's unsafe.
-    // eslint-disable-next-line react-hooks/set-state-in-effect
     fetchData();
-    // Auto refresh every 20 seconds
     const interval = setInterval(() => {
       fetchData();
     }, 20000);
@@ -82,38 +73,35 @@ export default function LiveMarketTicker() {
   };
 
   return (
-    <section className="relative w-full bg-white border-y border-slate-200 text-slate-900 select-none overflow-hidden shadow-xs">
-      {/* Top Controls Ribbon */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-2.5 flex flex-wrap items-center justify-between gap-3 border-b border-slate-100">
-        {/* Live Status Pill */}
-        <div className="flex items-center gap-3">
-          <div className="flex items-center gap-2 px-2.5 py-1 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-700 text-xs font-bold tracking-wider uppercase shadow-xs">
-            <span className="relative flex h-2 w-2">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
-            </span>
-            <span className="flex items-center gap-1.5">
-              <FiActivity className="text-xs" /> Live Market Feed
-            </span>
-          </div>
+    <section className="relative w-full py-6 sm:py-8 lg:py-10 bg-linear-to-b from-[#001c54] via-[#002b7f] to-[#001c54] border-y-2 border-brand-gold/40 text-white select-none overflow-hidden shadow-[0_10px_40px_rgba(0,43,127,0.5)]">
+      {/* Dynamic ambient background glows */}
+      <div className="absolute top-1/2 left-1/6 -translate-y-1/2 w-96 h-48 bg-brand-gold/20 rounded-full blur-3xl pointer-events-none" />
+      <div className="absolute top-1/2 right-1/6 -translate-y-1/2 w-96 h-48 bg-sky-400/20 rounded-full blur-3xl pointer-events-none" />
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-80 h-40 bg-emerald-500/15 rounded-full blur-3xl pointer-events-none" />
 
-          {lastUpdated && (
-            <span className="hidden sm:inline-block text-xs text-slate-400 font-mono">
-              Live: {lastUpdated}
-            </span>
-          )}
+      {/* Top Controls Ribbon */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-4 flex flex-wrap items-center justify-between gap-3 border-b border-white/10 relative z-10 mb-2">
+        {/* Live Status Badge */}
+        <div className="flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-emerald-950/80 border border-emerald-400/50 text-emerald-300 text-xs font-bold tracking-wider uppercase shadow-none">
+          <span className="relative flex h-2.5 w-2.5">
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-80"></span>
+            <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-400"></span>
+          </span>
+          <span className="flex items-center gap-1.5">
+            <FiActivity className="text-sm text-emerald-300" /> Live Market
+          </span>
         </div>
 
-        {/* Categories Tabs */}
-        <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-0.5">
+        {/* Categories Tabs (Clean direct buttons without outer overlay/shadow) */}
+        <div className="flex items-center gap-2 overflow-x-auto no-scrollbar py-1">
           {CATEGORIES.map((cat) => (
             <button
               key={cat}
               onClick={() => setSelectedCategory(cat)}
-              className={`px-3 py-1 rounded-lg text-xs font-semibold transition-all whitespace-nowrap cursor-pointer ${
+              className={`px-4 py-1.5 rounded-xl text-xs font-bold transition-all duration-300 whitespace-nowrap cursor-pointer ${
                 selectedCategory === cat
-                  ? "bg-slate-900 text-white shadow-xs"
-                  : "bg-slate-100 text-slate-600 hover:bg-slate-200 hover:text-slate-900"
+                  ? "bg-linear-to-r from-brand-gold via-amber-400 to-brand-gold text-slate-950 border border-amber-300 scale-105"
+                  : "bg-white/10 text-white/80 hover:bg-white/20 hover:text-white border border-white/15"
               }`}
             >
               {cat}
@@ -122,20 +110,20 @@ export default function LiveMarketTicker() {
         </div>
 
         {/* Actions (View Mode & Refresh) */}
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2.5">
           <button
             onClick={() => setViewMode(viewMode === "ticker" ? "grid" : "ticker")}
-            className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 border border-slate-200 text-xs font-medium text-slate-700 transition-colors cursor-pointer"
+            className="flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-white/10 hover:bg-brand-gold hover:text-slate-950 border border-white/20 hover:border-brand-gold text-xs font-bold text-white transition-all duration-300 cursor-pointer group"
             title="Toggle View Mode"
           >
             {viewMode === "ticker" ? (
               <>
-                <FiGrid className="text-xs text-slate-600" />
+                <FiGrid className="text-sm text-brand-gold group-hover:text-slate-950 transition-colors" />
                 <span className="hidden md:inline">Grid View</span>
               </>
             ) : (
               <>
-                <FiSliders className="text-xs text-slate-600" />
+                <FiSliders className="text-sm text-brand-gold group-hover:text-slate-950 transition-colors" />
                 <span className="hidden md:inline">Ticker View</span>
               </>
             )}
@@ -144,54 +132,65 @@ export default function LiveMarketTicker() {
           <button
             onClick={() => fetchData(true)}
             disabled={isRefreshing}
-            className="p-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 border border-slate-200 text-slate-600 hover:text-slate-900 transition-colors cursor-pointer"
+            className="p-2 rounded-xl bg-white/10 hover:bg-brand-gold hover:text-slate-950 border border-white/20 hover:border-brand-gold text-white transition-all duration-300 cursor-pointer group"
             title="Refresh Quotes"
           >
-            <FiRefreshCw className={`text-xs ${isRefreshing ? "animate-spin text-emerald-600" : ""}`} />
+            <FiRefreshCw className={`text-sm ${isRefreshing ? "animate-spin text-brand-gold" : "group-hover:text-slate-950"}`} />
           </button>
         </div>
       </div>
 
       {/* Main Content Area */}
       {isLoading ? (
-        <div className="py-8 flex items-center justify-center gap-2 text-slate-500 text-sm font-medium">
-          <FiRefreshCw className="animate-spin text-slate-700" /> Loading live market quotes...
+        <div className="py-12 flex items-center justify-center gap-3 text-slate-200 text-base font-semibold">
+          <FiRefreshCw className="animate-spin text-brand-gold text-xl" /> Loading live market quotes...
         </div>
       ) : viewMode === "ticker" ? (
-        /* Infinite Scrolling White Ticker Tape with Taller Cards */
-        <div className="relative w-full overflow-hidden py-4 sm:py-5 bg-slate-50/50">
-          {/* Subtle Left & Right Gradient Fades */}
-          <div className="absolute left-0 inset-y-0 w-16 sm:w-28 bg-linear-to-r from-white via-white/90 to-transparent z-10 pointer-events-none" />
-          <div className="absolute right-0 inset-y-0 w-16 sm:w-28 bg-linear-to-l from-white via-white/90 to-transparent z-10 pointer-events-none" />
+        /* Infinite Scrolling Ticker Tape with Yellow Border Cards */
+        <div className="relative w-full overflow-hidden py-5 sm:py-6 lg:py-7">
+          {/* Vignette Gradient Fades */}
+          <div className="absolute left-0 inset-y-0 w-20 sm:w-36 lg:w-48 bg-linear-to-r from-[#001c54] via-[#002b7f]/80 to-transparent z-10 pointer-events-none" />
+          <div className="absolute right-0 inset-y-0 w-20 sm:w-36 lg:w-48 bg-linear-to-l from-[#001c54] via-[#002b7f]/80 to-transparent z-10 pointer-events-none" />
 
           <div className="flex w-fit whitespace-nowrap">
-            <motion.div
-              animate={{ x: ["0%", "-50%"] }}
-              transition={{
-                repeat: Infinity,
-                ease: "linear",
-                duration: Math.max(28, filteredData.length * 5),
-              }}
-              className="flex items-center gap-4 sm:gap-5 shrink-0 pr-4 sm:pr-5"
-            >
-              {filteredData.concat(filteredData).map((item, idx) => (
-                <WhiteTickerPill
-                  key={`${item.id}-${idx}`}
-                  item={item}
-                  onClick={() => setSelectedItemForChart(item)}
-                  formatPrice={formatPrice}
-                  formatChange={formatChange}
-                />
-              ))}
-            </motion.div>
+            {(() => {
+              const repeatedData =
+                filteredData.length > 0 && filteredData.length < 5
+                  ? [...filteredData, ...filteredData, ...filteredData, ...filteredData]
+                  : [...filteredData, ...filteredData];
+              const scrollDuration = Math.max(16, filteredData.length * 10);
+
+              return (
+                <motion.div
+                  key={selectedCategory}
+                  animate={{ x: ["0%", "-50%"] }}
+                  transition={{
+                    repeat: Infinity,
+                    ease: "linear",
+                    duration: scrollDuration,
+                  }}
+                  className="flex items-center gap-5 sm:gap-6 shrink-0 pr-5 sm:pr-6"
+                >
+                  {repeatedData.map((item, idx) => (
+                    <YellowBorderTickerPill
+                      key={`${item.id}-${idx}`}
+                      item={item}
+                      onClick={() => setSelectedItemForChart(item)}
+                      formatPrice={formatPrice}
+                      formatChange={formatChange}
+                    />
+                  ))}
+                </motion.div>
+              );
+            })()}
           </div>
         </div>
       ) : (
-        /* Clean Responsive Grid Layout with Taller Cards */
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 bg-slate-50/40">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+        /* Responsive Grid Layout with Yellow Border Cards */
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 relative z-10">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
             {filteredData.map((item) => (
-              <WhiteGridCard
+              <YellowBorderGridCard
                 key={item.id}
                 item={item}
                 onClick={() => setSelectedItemForChart(item)}
@@ -203,10 +202,10 @@ export default function LiveMarketTicker() {
         </div>
       )}
 
-      {/* Interactive Chart Modal (Light / White Theme) */}
+      {/* Interactive White Theme Chart Modal */}
       <AnimatePresence>
         {selectedItemForChart && (
-          <LightChartModal
+          <WhiteThemeChartModal
             item={selectedItemForChart}
             onClose={() => setSelectedItemForChart(null)}
             formatPrice={formatPrice}
@@ -224,36 +223,40 @@ interface ItemProps {
   formatChange: (val: number, currency: string) => string;
 }
 
-function WhiteTickerPill({ item, onClick, formatPrice, formatChange }: ItemProps) {
+function YellowBorderTickerPill({ item, onClick, formatPrice, formatChange }: ItemProps) {
   const isUp = item.change >= 0;
 
   return (
     <button
       onClick={onClick}
-      className="group flex items-center gap-4 sm:gap-5 px-5 py-3 sm:px-6 sm:py-3.5 min-h-19 rounded-2xl bg-white hover:bg-slate-50/90 border border-slate-200/90 hover:border-slate-300 transition-all duration-200 cursor-pointer shadow-sm hover:shadow-md"
+      className="group flex items-center gap-5 sm:gap-6 px-6 py-4 sm:px-8 sm:py-5 min-h-24 sm:min-h-26 rounded-2xl bg-linear-to-br from-[#001c54]/95 via-[#002b7f]/90 to-[#001c54]/95 hover:from-[#002b7f] hover:to-[#0a3b9e] border-2 border-brand-gold hover:border-amber-300 transition-all duration-300 cursor-pointer shadow-[0_4px_20px_rgba(0,0,0,0.35)] hover:shadow-[0_0_25px_rgba(245,163,0,0.4)] hover:scale-[1.02]"
     >
       <div className="flex flex-col text-left justify-center">
-        <span className="text-sm font-bold tracking-tight text-slate-800 group-hover:text-slate-900 transition-colors">
+        <span className="text-base sm:text-lg font-extrabold tracking-tight text-white group-hover:text-brand-gold transition-colors">
           {item.name}
         </span>
-        <span className="text-[11px] text-slate-400 font-medium tracking-wide mt-0.5">{item.category}</span>
+        <span className="inline-block mt-1 px-2 py-0.5 rounded-md bg-brand-gold/20 border border-brand-gold/40 text-brand-gold text-[11px] font-bold tracking-wide w-fit">
+          {item.category}
+        </span>
       </div>
 
-      <div className="h-9 w-px bg-slate-200 shrink-0" />
+      <div className="h-10 w-0.5 bg-linear-to-b from-transparent via-brand-gold/60 to-transparent shrink-0" />
 
       <div className="flex flex-col text-right justify-center">
-        <span className="text-sm sm:text-base font-extrabold text-slate-900 font-mono tracking-tight">
+        <span className="text-base sm:text-xl font-extrabold text-white font-mono tracking-tight drop-shadow-md">
           {formatPrice(item.price, item.currency)}
         </span>
-        <div className="flex items-center gap-1.5 justify-end mt-0.5">
+        <div className="flex items-center gap-1.5 justify-end mt-1">
           {isUp ? (
-            <FiTrendingUp className="text-xs text-emerald-600" />
+            <FiTrendingUp className="text-sm text-emerald-400 animate-bounce" />
           ) : (
-            <FiTrendingDown className="text-xs text-rose-600" />
+            <FiTrendingDown className="text-sm text-rose-400 animate-bounce" />
           )}
           <span
-            className={`text-xs font-bold font-mono px-1.5 py-0.5 rounded-md ${
-              isUp ? "text-emerald-700 bg-emerald-50 border border-emerald-200/60" : "text-rose-700 bg-rose-50 border border-rose-200/60"
+            className={`text-xs font-extrabold font-mono px-2.5 py-1 rounded-lg ${
+              isUp
+                ? "text-emerald-300 bg-emerald-500/20 border border-emerald-400/50 shadow-[0_0_10px_rgba(16,185,129,0.3)]"
+                : "text-rose-300 bg-rose-500/20 border border-rose-400/50 shadow-[0_0_10px_rgba(239,68,68,0.3)]"
             }`}
           >
             {formatChange(item.change, item.currency)} ({item.changePercent >= 0 ? "+" : ""}
@@ -265,24 +268,28 @@ function WhiteTickerPill({ item, onClick, formatPrice, formatChange }: ItemProps
   );
 }
 
-function WhiteGridCard({ item, onClick, formatPrice, formatChange }: ItemProps) {
+function YellowBorderGridCard({ item, onClick, formatPrice, formatChange }: ItemProps) {
   const isUp = item.change >= 0;
 
   return (
     <button
       onClick={onClick}
-      className="group p-4 sm:p-5 min-h-28.75 rounded-2xl bg-white hover:bg-slate-50 border border-slate-200/90 hover:border-slate-300 transition-all duration-200 text-left flex flex-col justify-between cursor-pointer shadow-xs hover:shadow-md"
+      className="group p-6 sm:p-7 min-h-36 sm:min-h-40 rounded-2xl bg-linear-to-br from-[#001c54]/95 via-[#002b7f]/90 to-[#001c54]/95 hover:from-[#002b7f] hover:to-[#0a3b9e] border-2 border-brand-gold hover:border-amber-300 transition-all duration-300 text-left flex flex-col justify-between cursor-pointer shadow-[0_4px_20px_rgba(0,0,0,0.35)] hover:shadow-[0_0_25px_rgba(245,163,0,0.4)] hover:scale-[1.02]"
     >
-      <div className="flex items-start justify-between gap-2 mb-3">
+      <div className="flex items-start justify-between gap-3 mb-3">
         <div>
-          <span className="block text-sm font-bold text-slate-800 group-hover:text-slate-900 transition-colors">
+          <span className="block text-base sm:text-lg font-extrabold text-white group-hover:text-brand-gold transition-colors">
             {item.name}
           </span>
-          <span className="text-[11px] text-slate-400 font-medium mt-0.5 block">{item.category}</span>
+          <span className="inline-block mt-1 px-2.5 py-0.5 rounded-md bg-brand-gold/20 border border-brand-gold/40 text-brand-gold text-[11px] font-bold">
+            {item.category}
+          </span>
         </div>
         <span
-          className={`text-xs font-bold px-2 py-0.5 rounded-md ${
-            isUp ? "bg-emerald-50 text-emerald-700 border border-emerald-200/60" : "bg-rose-50 text-rose-700 border border-rose-200/60"
+          className={`text-xs font-extrabold px-2.5 py-1 rounded-lg ${
+            isUp
+              ? "text-emerald-300 bg-emerald-500/20 border border-emerald-400/50 shadow-[0_0_10px_rgba(16,185,129,0.3)]"
+              : "text-rose-300 bg-rose-500/20 border border-rose-400/50 shadow-[0_0_10px_rgba(239,68,68,0.3)]"
           }`}
         >
           {isUp ? "+" : ""}
@@ -290,16 +297,16 @@ function WhiteGridCard({ item, onClick, formatPrice, formatChange }: ItemProps) 
         </span>
       </div>
 
-      <div className="mt-2 flex items-baseline justify-between gap-2">
-        <div className="text-base sm:text-lg font-extrabold text-slate-900 font-mono">
+      <div className="mt-3 flex items-baseline justify-between gap-2">
+        <div className="text-lg sm:text-2xl font-extrabold text-white font-mono drop-shadow-md">
           {formatPrice(item.price, item.currency)}
         </div>
         <div
-          className={`text-xs font-mono font-bold flex items-center gap-1 ${
-            isUp ? "text-emerald-600" : "text-rose-600"
+          className={`text-xs font-mono font-extrabold flex items-center gap-1 ${
+            isUp ? "text-emerald-400" : "text-rose-400"
           }`}
         >
-          {isUp ? <FiTrendingUp className="text-xs" /> : <FiTrendingDown className="text-xs" />}
+          {isUp ? <FiTrendingUp className="text-sm" /> : <FiTrendingDown className="text-sm" />}
           {formatChange(item.change, item.currency)}
         </div>
       </div>
@@ -307,7 +314,7 @@ function WhiteGridCard({ item, onClick, formatPrice, formatChange }: ItemProps) 
   );
 }
 
-function LightChartModal({
+function WhiteThemeChartModal({
   item,
   onClose,
   formatPrice,
@@ -322,7 +329,6 @@ function LightChartModal({
   useEffect(() => {
     if (!containerRef.current) return;
 
-    // Clean any prior widget
     containerRef.current.innerHTML = "";
 
     const script = document.createElement("script");
@@ -341,11 +347,10 @@ function LightChartModal({
       backgroundColor: "#ffffff",
       gridColor: "rgba(0, 0, 0, 0.05)",
       hide_side_toolbar: false,
-      allow_symbol_change: true,
+      allow_symbol_change: false,
       save_image: true,
       calendar: false,
       hide_volume: false,
-      support_host: "https://www.tradingview.com",
     });
 
     containerRef.current.appendChild(script);
@@ -405,7 +410,7 @@ function LightChartModal({
           </div>
         </div>
 
-        {/* TradingView Chart Container (Light Mode) */}
+        {/* TradingView Chart Container (White Theme) */}
         <div className="relative flex-1 w-full bg-white overflow-hidden" ref={containerRef} />
       </motion.div>
     </div>
