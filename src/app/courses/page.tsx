@@ -27,7 +27,7 @@ export default function CoursesPage() {
   return (
     <div className="min-h-screen pt-10 pb-24 bg-surface-muted relative overflow-hidden">
       {/* Background Ambient Glow */}
-      <div className="absolute top-10 left-1/2 -translate-x-1/2 w-[900px] h-[500px] bg-linear-to-b from-brand-gold/15 via-brand-navy/10 to-transparent rounded-full blur-[140px] pointer-events-none -z-10" />
+      <div className="absolute top-10 left-1/2 -translate-x-1/2 w-225 h-125 bg-linear-to-b from-brand-gold/15 via-brand-navy/10 to-transparent rounded-full blur-[140px] pointer-events-none -z-10" />
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Section Header */}

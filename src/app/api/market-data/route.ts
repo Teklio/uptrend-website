@@ -114,7 +114,8 @@ let cachedData: { timestamp: number; items: MarketItem[] } | null = null;
 const CACHE_TTL_MS = 15000; // 15 seconds
 
 async function fetchQuote(config: typeof INSTRUMENT_CONFIGS[number]): Promise<MarketItem | null> {
-  const symbolsToTry = [config.symbol, (config as any).fallbackSymbol].filter(Boolean);
+  const fallbackSymbol = "fallbackSymbol" in config ? config.fallbackSymbol : undefined;
+  const symbolsToTry = [config.symbol, fallbackSymbol].filter((s): s is string => Boolean(s));
 
   for (const sym of symbolsToTry) {
     try {
@@ -228,11 +229,11 @@ export async function GET() {
         },
       }
     );
-  } catch (err: any) {
+  } catch (err) {
     return NextResponse.json(
       {
         success: false,
-        error: err.message || "Failed to fetch live market data",
+        error: err instanceof Error ? err.message : "Failed to fetch live market data",
         data: cachedData?.items || [],
       },
       { status: 500 }
