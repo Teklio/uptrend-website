@@ -8,7 +8,7 @@ import { useForm, FormProvider, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useAuth } from "@/context/AuthContext";
 import { listEnrolledCourses } from "@/services/learn.service";
-import { listMyPayments } from "@/services/payment.service";
+import { listMyPayments, getPaymentReceipt } from "@/services/payment.service";
 import { listStates } from "@/services/state.service";
 import * as authService from "@/services/auth.service";
 import { EnrolledCourse } from "@/types/learn.type";
@@ -34,6 +34,7 @@ import {
   HiOutlinePencilAlt,
   HiOutlineLockClosed,
   HiOutlineChevronDown,
+  HiOutlineDownload,
   HiX,
 } from "react-icons/hi";
 
@@ -50,6 +51,8 @@ export default function DashboardPage() {
   const [coursesLoading, setCoursesLoading] = useState(true);
   const [payments, setPayments] = useState<Payment[]>([]);
   const [states, setStates] = useState<StateOption[]>([]);
+  const [downloadingReceiptId, setDownloadingReceiptId] = useState<string | null>(null);
+  const [receiptError, setReceiptError] = useState("");
 
   const [profileError, setProfileError] = useState("");
   const [passwordError, setPasswordError] = useState("");
@@ -127,6 +130,19 @@ export default function DashboardPage() {
       if (!applyServerFieldErrors(passwordForm, err)) {
         setPasswordError(err instanceof ApiError ? err.message : "Could not change password.");
       }
+    }
+  };
+
+  const handleDownloadReceipt = async (paymentId: string) => {
+    setDownloadingReceiptId(paymentId);
+    setReceiptError("");
+    try {
+      const { receiptUrl } = await getPaymentReceipt(paymentId);
+      window.open(receiptUrl, "_blank", "noopener,noreferrer");
+    } catch (err) {
+      setReceiptError(err instanceof ApiError ? err.message : "Could not generate your receipt. Please try again.");
+    } finally {
+      setDownloadingReceiptId(null);
     }
   };
 
@@ -377,6 +393,7 @@ export default function DashboardPage() {
 
               <div className="space-y-4">
                 <h2 className="text-lg font-bold text-slate-900">My Purchases</h2>
+                {receiptError && <p className="text-xs font-medium text-red-600">{receiptError}</p>}
                 {payments.length === 0 ? (
                   <p className="text-sm text-slate-500">No purchases yet.</p>
                 ) : (
@@ -388,6 +405,7 @@ export default function DashboardPage() {
                           <th className="text-left px-4 py-3">Amount</th>
                           <th className="text-left px-4 py-3">Status</th>
                           <th className="text-left px-4 py-3">Date</th>
+                          <th className="text-left px-4 py-3">Receipt</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-slate-100">
@@ -408,7 +426,22 @@ export default function DashboardPage() {
                                 {payment.status}
                               </span>
                             </td>
-                            <td className="px-4 py-3 text-slate-500">{new Date(payment.createdAt).toLocaleDateString("en-IN")}</td>
+                            <td className="px-4 py-3 text-slate-500 whitespace-nowrap">{new Date(payment.createdAt).toLocaleDateString("en-IN")}</td>
+                            <td className="px-4 py-3">
+                              {payment.status === "SUCCESS" ? (
+                                <button
+                                  type="button"
+                                  onClick={() => handleDownloadReceipt(payment.id)}
+                                  disabled={downloadingReceiptId === payment.id}
+                                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 transition-colors cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed whitespace-nowrap"
+                                >
+                                  <HiOutlineDownload className="text-sm" />
+                                  <span>{downloadingReceiptId === payment.id ? "Preparing..." : "Download"}</span>
+                                </button>
+                              ) : (
+                                <span className="text-xs text-slate-400">—</span>
+                              )}
+                            </td>
                           </tr>
                         ))}
                       </tbody>

@@ -1,6 +1,6 @@
 import { api } from "@/lib/api";
 import { Paginated } from "@/types/common.type";
-import { CheckoutResponse, Payment, PaymentStatus, VerifyPaymentResponse } from "@/types/payment.type";
+import { CheckoutResponse, Payment, PaymentStatus, ReceiptResponse, VerifyPaymentResponse } from "@/types/payment.type";
 
 export const checkout = (data: { courseId: string; name?: string; phone?: string; state?: string }) =>
   api.post<CheckoutResponse>("/payments/checkout", data);
@@ -31,3 +31,6 @@ export const listMyPayments = (params: { page?: number; limit?: number; status?:
 };
 
 export const getMyPayment = (paymentId: string) => api.get<Payment>(`/payments/me/${paymentId}`);
+
+export const getPaymentReceipt = (paymentId: string) =>
+  api.get<ReceiptResponse>(`/payments/me/${paymentId}/receipt`);

@@ -34,3 +34,7 @@ export interface CheckoutResponse {
 export interface VerifyPaymentResponse {
   status: PaymentStatus;
 }
+
+export interface ReceiptResponse {
+  receiptUrl: string;
+}
