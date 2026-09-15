@@ -33,7 +33,7 @@ const INSTRUMENT_CONFIGS = [
     name: "Nifty MidSmallCap 400",
     category: "Indian Indices" as const,
     currency: "₹",
-    tradingViewSymbol: "NSE:MIDSMALL",
+    tradingViewSymbol: "NSE:NIFTY",
   },
   {
     id: "nifty-midcap-100",
@@ -49,7 +49,7 @@ const INSTRUMENT_CONFIGS = [
     name: "Nifty SmallCap 100",
     category: "Indian Indices" as const,
     currency: "₹",
-    tradingViewSymbol: "NSE:NIFTYSMALCAP100",
+    tradingViewSymbol: "NSE:CNXSMALLCAP",
   },
   {
     id: "xauusd",
@@ -57,7 +57,7 @@ const INSTRUMENT_CONFIGS = [
     name: "XAUUSD (Gold)",
     category: "Commodities" as const,
     currency: "$",
-    tradingViewSymbol: "OANDA:XAUUSD",
+    tradingViewSymbol: "TVC:GOLD",
   },
   {
     id: "dxy",
@@ -65,7 +65,7 @@ const INSTRUMENT_CONFIGS = [
     name: "US Dollar Currency Index",
     category: "Forex" as const,
     currency: "",
-    tradingViewSymbol: "TVC:DXY",
+    tradingViewSymbol: "CAPITALCOM:DXY",
   },
   {
     id: "sp500",
@@ -73,7 +73,7 @@ const INSTRUMENT_CONFIGS = [
     name: "S&P 500 Index",
     category: "Global Indices" as const,
     currency: "$",
-    tradingViewSymbol: "SP:SPX",
+    tradingViewSymbol: "FOREXCOM:SPXUSD",
   },
   {
     id: "dowjones",
@@ -81,7 +81,7 @@ const INSTRUMENT_CONFIGS = [
     name: "Dow Jones Industrial Average",
     category: "Global Indices" as const,
     currency: "$",
-    tradingViewSymbol: "DJ:DJI",
+    tradingViewSymbol: "FOREXCOM:DJI",
   },
   {
     id: "nasdaq100",
@@ -89,7 +89,7 @@ const INSTRUMENT_CONFIGS = [
     name: "Nasdaq 100 Index",
     category: "Global Indices" as const,
     currency: "$",
-    tradingViewSymbol: "NASDAQ:NDX",
+    tradingViewSymbol: "FOREXCOM:NSXUSD",
   },
   {
     id: "brent-crude",
@@ -105,7 +105,7 @@ const INSTRUMENT_CONFIGS = [
     name: "Indian Rupee / US Dollar",
     category: "Forex" as const,
     currency: "₹",
-    tradingViewSymbol: "FX_IDC:USDINR",
+    tradingViewSymbol: "FX:USDINR",
   },
 ];
 
