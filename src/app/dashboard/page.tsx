@@ -134,12 +134,23 @@ export default function DashboardPage() {
   };
 
   const handleDownloadReceipt = async (paymentId: string) => {
+    // Opened synchronously, inside the click's user-gesture window, so
+    // browsers won't block it — then navigated once the URL is ready.
+    // Opening a new tab *after* the `await` below would happen outside that
+    // window and get silently blocked as a popup in most browsers.
+    const receiptWindow = window.open("", "_blank", "noopener,noreferrer");
+
     setDownloadingReceiptId(paymentId);
     setReceiptError("");
     try {
       const { receiptUrl } = await getPaymentReceipt(paymentId);
-      window.open(receiptUrl, "_blank", "noopener,noreferrer");
+      if (receiptWindow) {
+        receiptWindow.location.assign(receiptUrl);
+      } else {
+        window.location.assign(receiptUrl);
+      }
     } catch (err) {
+      receiptWindow?.close();
       setReceiptError(err instanceof ApiError ? err.message : "Could not generate your receipt. Please try again.");
     } finally {
       setDownloadingReceiptId(null);
@@ -474,7 +485,12 @@ export default function DashboardPage() {
                       <button
                         type="button"
                         onClick={() =>
-                          setSelectedCertificate({ courseId: course.id, courseName: course.name, progressPercent: course.progressPercent })
+                          setSelectedCertificate({
+                            courseId: course.id,
+                            courseName: course.name,
+                            progressPercent: course.progressPercent,
+                            isCourseComplete: course.isCourseComplete,
+                          })
                         }
                         className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs sm:text-sm font-bold bg-slate-900 hover:bg-slate-800 text-white shadow-sm transition-colors cursor-pointer"
                       >

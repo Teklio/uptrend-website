@@ -10,6 +10,11 @@ export interface CertificateTarget {
   courseId: string;
   courseName: string;
   progressPercent: number;
+  // Server gates the actual certificate on an exact `completed === total`
+  // video count, not the rounded percentage — a course with enough videos
+  // can round to 100% while still missing one, so this must come from the
+  // server's own exact check rather than being derived from progressPercent.
+  isCourseComplete: boolean;
 }
 
 interface CertificateModalProps {
@@ -42,15 +47,26 @@ export default function CertificateModal({ isOpen, onClose, certificate }: Certi
 
   if (!isOpen || !certificate) return null;
 
-  const isComplete = certificate.progressPercent >= 100;
+  const isComplete = certificate.isCourseComplete;
 
   const handleDownload = async () => {
+    // Opened synchronously, inside the click's user-gesture window, so
+    // browsers won't block it — then navigated once the URL is ready.
+    // Opening a new tab *after* the `await` below would happen outside that
+    // window and get silently blocked as a popup in most browsers.
+    const certWindow = window.open("", "_blank", "noopener,noreferrer");
+
     setLoading(true);
     setError("");
     try {
       const { certificateUrl } = await getCertificate(certificate.courseId);
-      window.open(certificateUrl, "_blank", "noopener,noreferrer");
+      if (certWindow) {
+        certWindow.location.assign(certificateUrl);
+      } else {
+        window.location.assign(certificateUrl);
+      }
     } catch (err) {
+      certWindow?.close();
       setError(err instanceof ApiError ? err.message : "Could not generate your certificate. Please try again.");
     } finally {
       setLoading(false);
