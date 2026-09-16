@@ -4,7 +4,7 @@ import React, { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { useForm, FormProvider, Controller } from "react-hook-form";
+import { useForm, FormProvider } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { motion } from "framer-motion";
 import {
@@ -28,7 +28,7 @@ export default function LoginPage() {
 
   const form = useForm<LoginSchemaType>({
     resolver: zodResolver(loginSchema),
-    defaultValues: { email: "", password: "", rememberMe: false },
+    defaultValues: { email: "", password: "" },
   });
 
   const onSubmit = async (values: LoginSchemaType) => {
@@ -123,24 +123,8 @@ export default function LoginPage() {
 
               <Input name="password" label="Password" type="password" required leftIcon={<HiOutlineLockClosed />} />
 
-              {/* Remember Me & Forgot Password */}
-              <div className="flex items-center justify-between text-xs sm:text-sm pt-1">
-                <Controller
-                  name="rememberMe"
-                  control={form.control}
-                  render={({ field }) => (
-                    <label className="flex items-center gap-2 cursor-pointer select-none text-slate-600">
-                      <input
-                        type="checkbox"
-                        checked={field.value}
-                        onChange={(e) => field.onChange(e.target.checked)}
-                        className="rounded border-slate-300 text-brand-navy focus:ring-brand-navy/20 h-4 w-4"
-                      />
-                      <span>Remember me</span>
-                    </label>
-                  )}
-                />
-
+              {/* Forgot Password */}
+              <div className="flex items-center justify-end text-xs sm:text-sm pt-1">
                 <Link
                   href="/forgot-password"
                   className="font-semibold text-brand-navy hover:text-brand-gold-dark transition-colors"

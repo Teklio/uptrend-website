@@ -6,6 +6,7 @@ export interface EnrolledCourse {
   purchasedAt: string;
   expiresAt: string | null;
   progressPercent: number;
+  isCourseComplete: boolean;
 }
 
 export interface EnrolledVideo {

@@ -4,7 +4,6 @@ import { emailSchema, nameSchema, passwordSchema } from "./common.schema";
 export const loginSchema = z.object({
   email: emailSchema,
   password: passwordSchema,
-  rememberMe: z.boolean(),
 });
 export type LoginSchemaType = z.infer<typeof loginSchema>;
 
