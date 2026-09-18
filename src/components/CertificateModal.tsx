@@ -54,7 +54,12 @@ export default function CertificateModal({ isOpen, onClose, certificate }: Certi
     // browsers won't block it — then navigated once the URL is ready.
     // Opening a new tab *after* the `await` below would happen outside that
     // window and get silently blocked as a popup in most browsers.
-    const certWindow = window.open("", "_blank", "noopener,noreferrer");
+    // Deliberately no "noopener"/"noreferrer" here — either one makes
+    // window.open() always return null (even though the tab still opens),
+    // which broke the whole point of capturing a reference: the code fell
+    // through to navigating the *current* tab instead, leaving this new one
+    // stuck on about:blank forever while the site itself got replaced.
+    const certWindow = window.open("", "_blank");
 
     setLoading(true);
     setError("");
