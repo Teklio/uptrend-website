@@ -18,6 +18,9 @@ export const metadata: Metadata = {
     default: "UPtrend | Premier Financial Market Education Institute",
     template: "%s | UPtrend Financial Academy",
   },
+  icons: {
+    icon: "/logo.png",
+  },
   description:
     "Master Nifty 50 Options, Futures, Swing Trading & Forex with institutional Smart Money Concepts (SMC) and strict risk management. Live mentorship in Malayalam & English by Nikhil Mathew.",
   keywords: [
@@ -54,6 +57,8 @@ export const metadata: Metadata = {
   },
 };
 
+import { AuthProvider } from "@/context/AuthContext";
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -65,10 +70,12 @@ export default function RootLayout({
       className={`${poppins.variable} font-sans h-full antialiased`}
     >
       <body className="min-h-full flex flex-col bg-white text-slate-900 font-sans">
-        <Header />
-        <main className="flex-1">{children}</main>
-        <Footer />
-        <StickyContact />
+        <AuthProvider>
+          <Header />
+          <main className="flex-1">{children}</main>
+          <Footer />
+          <StickyContact />
+        </AuthProvider>
       </body>
     </html>
   );

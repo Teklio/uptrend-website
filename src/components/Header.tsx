@@ -5,12 +5,8 @@ import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
-import {
-  HiOutlineUser,
-  HiOutlineArrowRight,
-  HiOutlineSparkles,
-  HiXMark,
-} from "react-icons/hi2";
+import { HiOutlineUser, HiOutlineArrowRight, HiXMark } from "react-icons/hi2";
+import { useAuth } from "@/context/AuthContext";
 
 interface NavItem {
   name: string;
@@ -27,6 +23,7 @@ const navItems: NavItem[] = [
 ];
 
 export default function Header() {
+  const { isLoggedIn, user } = useAuth();
   const [isScrolled, setIsScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
@@ -40,9 +37,15 @@ export default function Header() {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  useEffect(() => {
+  // Closes the mobile menu the moment the route changes — compared during
+  // render (React's documented pattern for resetting state when a prop
+  // changes) rather than in an effect, since Header persists across
+  // navigations instead of unmounting.
+  const [prevPathname, setPrevPathname] = useState(pathname);
+  if (pathname !== prevPathname) {
+    setPrevPathname(pathname);
     setMobileMenuOpen(false);
-  }, [pathname]);
+  }
 
   // Lock scroll on mobile menu
   useEffect(() => {
@@ -55,6 +58,13 @@ export default function Header() {
       document.body.style.overflow = "";
     };
   }, [mobileMenuOpen]);
+
+  // Hide header completely on dashboard screens
+  if (pathname.startsWith("/dashboard")) {
+    return null;
+  }
+
+  const visibleNavItems = isLoggedIn ? navItems.filter((item) => item.href !== "/enrollment") : navItems;
 
   return (
     <>
@@ -92,7 +102,7 @@ export default function Header() {
               className="hidden lg:flex items-center gap-1.5 px-3 py-2 rounded-full bg-slate-50/90 border border-slate-200/70 shadow-[inset_0_1px_3px_rgba(0,0,0,0.04)]"
               onMouseLeave={() => setHoveredIndex(null)}
             >
-              {navItems.map((item, index) => {
+              {visibleNavItems.map((item, index) => {
                 const isActive =
                   pathname === item.href ||
                   (item.href !== "/" && pathname.startsWith(item.href));
@@ -149,41 +159,62 @@ export default function Header() {
 
             {/* Right Action Buttons */}
             <div className="hidden sm:flex items-center gap-3.5">
-              {/* Login Button */}
-              <Link
-                href="/login"
-                className="group relative flex items-center gap-2 px-5 py-2.5 text-[15px] font-semibold text-slate-700 hover:text-brand-navy transition-all duration-200 rounded-full hover:bg-slate-100/80"
-              >
-                <HiOutlineUser className="text-lg text-slate-400 group-hover:text-brand-navy transition-colors" />
-                <span>Login</span>
-              </Link>
+              {/* Dashboard / Login Button */}
+              {isLoggedIn ? (
+                <Link
+                  href="/dashboard"
+                  className="group relative flex items-center gap-2.5 px-4 py-2 text-sm font-bold text-slate-800 hover:text-brand-navy bg-slate-100 hover:bg-slate-200/80 border border-slate-200 rounded-full transition-all duration-200"
+                >
+                  <div className="w-6 h-6 rounded-full bg-brand-navy text-brand-gold flex items-center justify-center font-bold text-xs shadow-inner">
+                    {user?.name ? user.name.charAt(0).toUpperCase() : "U"}
+                  </div>
+                  <span className="font-semibold text-xs tracking-tight">Dashboard</span>
+                  <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                </Link>
+              ) : (
+                <Link
+                  href="/login"
+                  className="group relative flex items-center gap-2 px-5 py-2.5 text-[15px] font-semibold text-slate-700 hover:text-brand-navy transition-all duration-200 rounded-full hover:bg-slate-100/80"
+                >
+                  <HiOutlineUser className="text-lg text-slate-400 group-hover:text-brand-navy transition-colors" />
+                  <span>Login</span>
+                </Link>
+              )}
 
               {/* Minimal Premium CTA Button */}
-              <Link
-                href="/enrollment"
-                className="relative group overflow-hidden inline-flex items-center gap-2.5 px-6 py-3 rounded-full text-[15px] font-bold text-slate-950 bg-gradient-to-r from-brand-gold to-amber-400 hover:from-amber-400 hover:to-brand-gold shadow-[0_2px_16px_rgba(245,163,0,0.3)] hover:shadow-[0_4px_24px_rgba(245,163,0,0.45)] transition-all duration-300 hover:scale-[1.02] active:scale-[0.98]"
-              >
-                <span className="relative z-10 flex items-center gap-2 tracking-wide">
-                  <span>Enroll Now</span>
-                  <HiOutlineArrowRight className="text-sm transition-transform duration-300 group-hover:translate-x-1" />
-                </span>
+              {!isLoggedIn && (
+                <Link
+                  href="/enrollment"
+                  className="relative group overflow-hidden inline-flex items-center gap-2.5 px-6 py-3 rounded-full text-[15px] font-bold text-slate-950 bg-linear-to-r from-brand-gold to-amber-400 hover:from-amber-400 hover:to-brand-gold shadow-[0_2px_16px_rgba(245,163,0,0.3)] hover:shadow-[0_4px_24px_rgba(245,163,0,0.45)] transition-all duration-300 hover:scale-[1.02] active:scale-[0.98]"
+                >
+                  <span className="relative z-10 flex items-center gap-2 tracking-wide">
+                    <span>Enroll Now</span>
+                    <HiOutlineArrowRight className="text-sm transition-transform duration-300 group-hover:translate-x-1" />
+                  </span>
 
-                {/* Shimmer effect */}
-                <motion.div
-                  className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/40 to-transparent group-hover:animate-[shimmer_1.5s_infinite]"
-                  initial={false}
-                />
-              </Link>
+                  {/* Shimmer effect */}
+                  <motion.div
+                    className="absolute inset-0 -translate-x-full bg-linear-to-r from-transparent via-white/40 to-transparent group-hover:animate-[shimmer_1.5s_infinite]"
+                    initial={false}
+                  />
+                </Link>
+              )}
             </div>
 
             {/* Mobile / Tablet Menu Button */}
             <div className="flex lg:hidden items-center gap-2.5">
               <Link
-                href="/login"
-                aria-label="Login"
+                href={isLoggedIn ? "/dashboard" : "/login"}
+                aria-label="Dashboard / Login"
                 className="p-2.5 text-slate-600 hover:text-brand-navy hover:bg-slate-100 rounded-full transition-colors sm:hidden"
               >
-                <HiOutlineUser className="w-6 h-6" />
+                {isLoggedIn ? (
+                  <div className="w-7 h-7 rounded-full bg-brand-navy text-brand-gold flex items-center justify-center font-bold text-xs">
+                    {user?.name ? user.name.charAt(0).toUpperCase() : "U"}
+                  </div>
+                ) : (
+                  <HiOutlineUser className="w-6 h-6" />
+                )}
               </Link>
 
               <button
@@ -253,7 +284,7 @@ export default function Header() {
                 <div>
                   {/* Nav links */}
                   <nav className="flex flex-col space-y-1.5">
-                    {navItems.map((item, idx) => {
+                    {visibleNavItems.map((item, idx) => {
                       const isActive =
                         pathname === item.href ||
                         (item.href !== "/" && pathname.startsWith(item.href));
@@ -295,23 +326,36 @@ export default function Header() {
 
                 {/* Footer Action Buttons */}
                 <div className="pt-6 border-t border-slate-100 space-y-3">
-                  <Link
-                    href="/login"
-                    onClick={() => setMobileMenuOpen(false)}
-                    className="flex items-center justify-center gap-2 w-full py-3 rounded-xl border border-slate-300 text-sm font-bold text-slate-800 hover:bg-slate-50 transition-colors"
-                  >
-                    <HiOutlineUser className="text-base text-brand-navy" />
-                    <span>Student Login</span>
-                  </Link>
+                  {isLoggedIn ? (
+                    <Link
+                      href="/dashboard"
+                      onClick={() => setMobileMenuOpen(false)}
+                      className="flex items-center justify-center gap-2 w-full py-3.5 rounded-xl bg-brand-navy text-white text-sm font-bold shadow-md hover:shadow-lg transition-all"
+                    >
+                      <span>Go to Dashboard</span>
+                      <HiOutlineArrowRight className="text-sm" />
+                    </Link>
+                  ) : (
+                    <>
+                      <Link
+                        href="/login"
+                        onClick={() => setMobileMenuOpen(false)}
+                        className="flex items-center justify-center gap-2 w-full py-3 rounded-xl border border-slate-300 text-sm font-bold text-slate-800 hover:bg-slate-50 transition-colors"
+                      >
+                        <HiOutlineUser className="text-base text-brand-navy" />
+                        <span>Student Login</span>
+                      </Link>
 
-                  <Link
-                    href="/enrollment"
-                    onClick={() => setMobileMenuOpen(false)}
-                    className="flex items-center justify-center gap-2 w-full py-3.5 rounded-xl bg-gradient-to-r from-brand-gold via-amber-400 to-brand-gold text-slate-950 text-sm font-bold shadow-md hover:shadow-lg transition-all"
-                  >
-                    <span>Enroll Now</span>
-                    <HiOutlineArrowRight className="text-sm" />
-                  </Link>
+                      <Link
+                        href="/enrollment"
+                        onClick={() => setMobileMenuOpen(false)}
+                        className="flex items-center justify-center gap-2 w-full py-3.5 rounded-xl bg-linear-to-r from-brand-gold via-amber-400 to-brand-gold text-slate-950 text-sm font-bold shadow-md hover:shadow-lg transition-all"
+                      >
+                        <span>Enroll Now</span>
+                        <HiOutlineArrowRight className="text-sm" />
+                      </Link>
+                    </>
+                  )}
                 </div>
               </div>
             </motion.div>

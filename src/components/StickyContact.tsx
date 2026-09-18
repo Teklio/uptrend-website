@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
+import { usePathname } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { FaWhatsapp, FaPhoneAlt } from "react-icons/fa";
 import { HiOutlineX, HiChatAlt2 } from "react-icons/hi";
@@ -9,7 +10,12 @@ const PHONE_NUMBER = "7907171406";
 const DISPLAY_PHONE = "790 7171 406";
 
 export default function StickyContact() {
+  const pathname = usePathname();
   const [isOpen, setIsOpen] = useState(true);
+
+  if (pathname.startsWith("/dashboard")) {
+    return null;
+  }
 
   const whatsappUrl = `https://wa.me/91${PHONE_NUMBER}?text=Hi%20UPtrend,%20I%20would%20like%20to%20know%20more%20about%20your%20trading%20courses.`;
   const callUrl = `tel:+91${PHONE_NUMBER}`;

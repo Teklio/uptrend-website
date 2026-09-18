@@ -3,13 +3,12 @@
 import React from "react";
 import Link from "next/link";
 import Image from "next/image";
+import { usePathname } from "next/navigation";
 import {
   HiOutlinePhone,
   HiOutlineMail,
   HiOutlineLocationMarker,
   HiOutlineClock,
-  HiOutlineArrowRight,
-  HiOutlineShieldCheck,
 } from "react-icons/hi";
 import {
   FaInstagram,
@@ -45,6 +44,12 @@ const socialLinks = [
 ];
 
 export default function Footer() {
+  const pathname = usePathname();
+
+  if (pathname.startsWith("/dashboard")) {
+    return null;
+  }
+
   return (
     <footer className="w-full bg-slate-950 text-slate-300 font-sans relative pt-16 sm:pt-20 pb-10 overflow-hidden border-t border-slate-800">
       {/* Subtle Ambient Background Lighting */}
@@ -167,15 +172,15 @@ export default function Footer() {
             © {new Date().getFullYear()} <strong className="text-slate-300 font-semibold">UPtrend</strong>. All rights reserved. Built for traders in Kerala & UAE.
           </div>
 
-          <div className="flex items-center gap-6 text-slate-400">
-            <Link href="/privacy" className="hover:text-brand-gold transition-colors">
+          <div className="flex flex-wrap items-center gap-6 text-slate-400">
+            <Link href="/privacy-policy" className="hover:text-brand-gold transition-colors">
               Privacy Policy
             </Link>
-            <Link href="/terms" className="hover:text-brand-gold transition-colors">
-              Terms of Service
+            <Link href="/refund-policy" className="hover:text-brand-gold transition-colors">
+              Refund Policy
             </Link>
             <Link href="/disclaimer" className="hover:text-brand-gold transition-colors">
-              Risk Disclosure
+                Disclaimer
             </Link>
           </div>
         </div>

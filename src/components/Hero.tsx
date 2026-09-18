@@ -6,7 +6,7 @@ import Image from "next/image";
 import { motion } from "framer-motion";
 import { HiOutlineArrowRight } from "react-icons/hi";
 import { FiTrendingUp, FiTarget, FiLayers, FiCpu } from "react-icons/fi";
-import { BsCurrencyBitcoin, BsCurrencyExchange } from "react-icons/bs";
+import { BsCurrencyExchange } from "react-icons/bs";
 import { TbChartCandle } from "react-icons/tb";
 
 const features = [
@@ -38,7 +38,7 @@ const features = [
 
 export default function Hero() {
     return (
-        <section className="relative overflow-hidden pt-10 pb-16 sm:pt-16 sm:pb-24 lg:pt-20 lg:pb-28 bg-gradient-to-b from-white via-slate-50/60 to-white">
+        <section className="relative overflow-hidden pt-10 pb-16 sm:pt-16 sm:pb-24 lg:pt-20 lg:pb-28 bg-linear-to-b from-white via-slate-50/60 to-white">
             {/* Background Image (hero_bg.png) with Exact Top White Fade Match */}
             <div className="absolute inset-0 -z-30 pointer-events-none overflow-hidden">
                 <Image
@@ -50,14 +50,14 @@ export default function Hero() {
                     sizes="100vw"
                 />
                 {/* Seamless Multi-Layered White Mask to perfectly match the white theme */}
-                <div className="absolute inset-0 bg-gradient-to-b from-white via-white/40 to-white/90" />
+                <div className="absolute inset-0 bg-linear-to-b from-white via-white/40 to-white/90" />
                 <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_60%_at_50%_0%,rgba(255,255,255,0.9)_0%,transparent_100%)]" />
             </div>
 
             {/* Ambient Background Concentric Radar Rings & Glowing Trading Orbs (Using Brand Color Codes) */}
             <div className="absolute inset-0 pointer-events-none -z-10 overflow-hidden">
                 {/* Central High-Intensity Soft Glow Aura */}
-                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[750px] sm:w-[1000px] h-[550px] rounded-full bg-gradient-to-b from-brand-gold/25 via-brand-navy/15 to-transparent blur-[110px]" />
+                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[750px] sm:w-[1000px] h-[550px] rounded-full bg-linear-to-b from-brand-gold/25 via-brand-navy/15 to-transparent blur-[110px]" />
 
                 {/* Concentric Radar / Orbit Rings with Increased Opacity & Brand Colors */}
                 <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[1150px] h-[1150px] rounded-full border-2 border-brand-navy/20" />
@@ -67,34 +67,39 @@ export default function Hero() {
                 <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[300px] h-[300px] rounded-full border-2 border-brand-navy/35" />
 
                 {/* Grid Overlay Texture */}
-                <div className="absolute inset-0 bg-[linear-gradient(to_right,#002b7f12_1px,transparent_1px),linear-gradient(to_bottom,#002b7f12_1px,transparent_1px)] bg-[size:3.5rem_3.5rem] [mask-image:radial-gradient(ellipse_75%_65%_at_50%_45%,#000_75%,transparent_100%)]" />
+                <div className="absolute inset-0 bg-[linear-gradient(to_right,#002b7f12_1px,transparent_1px),linear-gradient(to_bottom,#002b7f12_1px,transparent_1px)] bg-size-[3.5rem_3.5rem] mask-[radial-gradient(ellipse_75%_65%_at_50%_45%,#000_75%,transparent_100%)]" />
             </div>
 
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative">
                 {/* 4 Large Glowing Circular Trading Orbs - Positioned & Contained for Large & Small Screens */}
-                {/* 1. Top-Left: Bitcoin / Crypto Orb */}
+                {/* 1. Top-Left: Gold / XAU USD Orb */}
                 <motion.div
                     animate={{
-                        y: [0, -14, 0],
-                        scale: [1, 1.04, 1],
+                        y: [0, -10, 0],
+                        scale: [1, 1.03, 1],
                     }}
                     transition={{
                         duration: 5.5,
                         repeat: Infinity,
                         ease: "easeInOut",
                     }}
-                    className="absolute top-0 sm:top-4 left-0 sm:left-2 lg:left-6 z-10 flex items-center justify-center w-14 h-14 sm:w-20 sm:h-20 md:w-24 md:h-24 rounded-full bg-[#001c54]/90 backdrop-blur-xl border-2 border-brand-gold p-1.5 shadow-[0_0_30px_rgba(245,163,0,0.45)]"
+                    className="absolute top-1 sm:top-4 left-2 sm:left-4 lg:left-6 z-10 flex items-center justify-center w-10 h-10 sm:w-20 sm:h-20 md:w-24 md:h-24 rounded-full bg-brand-navy-dark/90 backdrop-blur-xl border border-brand-gold sm:border-2 p-1 sm:p-1.5 shadow-[0_0_20px_rgba(245,163,0,0.35)]"
                 >
-                    <div className="w-full h-full rounded-full border border-brand-gold/50 flex items-center justify-center bg-gradient-to-b from-brand-navy via-[#001c54] to-slate-950 text-brand-gold">
-                        <BsCurrencyBitcoin className="text-2xl sm:text-3xl md:text-4xl drop-shadow-[0_0_12px_rgba(245,163,0,0.85)]" />
+                    <div className="w-full h-full rounded-full border border-brand-gold/40 flex flex-col items-center justify-center bg-linear-to-b from-brand-navy via-brand-navy-dark to-slate-950 text-brand-gold select-none">
+                        <span className="text-[8px] sm:text-xs md:text-sm font-black tracking-wider text-brand-gold drop-shadow-[0_0_10px_rgba(245,163,0,0.9)] font-mono leading-none">
+                            XAU
+                        </span>
+                        <span className="text-[6px] sm:text-[9px] md:text-[10px] font-extrabold text-amber-200 tracking-widest leading-tight mt-0.5">
+                            USD
+                        </span>
                     </div>
                 </motion.div>
 
                 {/* 2. Top-Right: Currency Exchange Orb */}
                 <motion.div
                     animate={{
-                        y: [0, 14, 0],
-                        scale: [1, 1.04, 1],
+                        y: [0, 10, 0],
+                        scale: [1, 1.03, 1],
                     }}
                     transition={{
                         duration: 6.5,
@@ -102,18 +107,18 @@ export default function Hero() {
                         ease: "easeInOut",
                         delay: 0.6,
                     }}
-                    className="absolute top-0 sm:top-4 right-0 sm:right-2 lg:right-6 z-10 flex items-center justify-center w-14 h-14 sm:w-20 sm:h-20 md:w-24 md:h-24 rounded-full bg-[#001c54]/90 backdrop-blur-xl border-2 border-brand-gold p-1.5 shadow-[0_0_30px_rgba(245,163,0,0.45)]"
+                    className="absolute top-1 sm:top-4 right-2 sm:right-4 lg:right-6 z-10 flex items-center justify-center w-10 h-10 sm:w-20 sm:h-20 md:w-24 md:h-24 rounded-full bg-brand-navy-dark/90 backdrop-blur-xl border border-brand-gold sm:border-2 p-1 sm:p-1.5 shadow-[0_0_20px_rgba(245,163,0,0.35)]"
                 >
-                    <div className="w-full h-full rounded-full border border-brand-gold/50 flex items-center justify-center bg-gradient-to-b from-brand-navy via-[#001c54] to-slate-950 text-brand-gold">
-                        <BsCurrencyExchange className="text-2xl sm:text-3xl md:text-4xl drop-shadow-[0_0_12px_rgba(245,163,0,0.85)]" />
+                    <div className="w-full h-full rounded-full border border-brand-gold/40 flex items-center justify-center bg-linear-to-b from-brand-navy via-brand-navy-dark to-slate-950 text-brand-gold">
+                        <BsCurrencyExchange className="text-base sm:text-3xl md:text-4xl drop-shadow-[0_0_10px_rgba(245,163,0,0.85)]" />
                     </div>
                 </motion.div>
 
                 {/* 3. Mid-Left: Uptrend Chart Orb */}
                 <motion.div
                     animate={{
-                        y: [0, -12, 0],
-                        scale: [1, 1.04, 1],
+                        y: [0, -10, 0],
+                        scale: [1, 1.03, 1],
                     }}
                     transition={{
                         duration: 6,
@@ -121,18 +126,18 @@ export default function Hero() {
                         ease: "easeInOut",
                         delay: 1.2,
                     }}
-                    className="absolute top-[40%] sm:top-[38%] -left-2 sm:left-0 lg:left-4 z-10 flex items-center justify-center w-14 h-14 sm:w-20 sm:h-20 md:w-24 md:h-24 rounded-full bg-[#001c54]/90 backdrop-blur-xl border-2 border-brand-gold p-1.5 shadow-[0_0_30px_rgba(245,163,0,0.45)]"
+                    className="absolute top-[38%] sm:top-[38%] left-2 sm:left-3 lg:left-4 z-10 flex items-center justify-center w-10 h-10 sm:w-20 sm:h-20 md:w-24 md:h-24 rounded-full bg-brand-navy-dark/90 backdrop-blur-xl border border-brand-gold sm:border-2 p-1 sm:p-1.5 shadow-[0_0_20px_rgba(245,163,0,0.35)]"
                 >
-                    <div className="w-full h-full rounded-full border border-brand-gold/50 flex items-center justify-center bg-gradient-to-b from-brand-navy via-[#001c54] to-slate-950 text-brand-gold">
-                        <FiTrendingUp className="text-2xl sm:text-3xl md:text-4xl drop-shadow-[0_0_12px_rgba(245,163,0,0.85)]" />
+                    <div className="w-full h-full rounded-full border border-brand-gold/40 flex items-center justify-center bg-linear-to-b from-brand-navy via-brand-navy-dark to-slate-950 text-brand-gold">
+                        <FiTrendingUp className="text-base sm:text-3xl md:text-4xl drop-shadow-[0_0_10px_rgba(245,163,0,0.85)]" />
                     </div>
                 </motion.div>
 
                 {/* 4. Mid-Right: Candlestick Pattern Orb */}
                 <motion.div
                     animate={{
-                        y: [0, 12, 0],
-                        scale: [1, 1.04, 1],
+                        y: [0, 10, 0],
+                        scale: [1, 1.03, 1],
                     }}
                     transition={{
                         duration: 7,
@@ -140,10 +145,10 @@ export default function Hero() {
                         ease: "easeInOut",
                         delay: 1.8,
                     }}
-                    className="absolute top-[40%] sm:top-[38%] -right-2 sm:right-0 lg:right-4 z-10 flex items-center justify-center w-14 h-14 sm:w-20 sm:h-20 md:w-24 md:h-24 rounded-full bg-[#001c54]/90 backdrop-blur-xl border-2 border-brand-gold p-1.5 shadow-[0_0_30px_rgba(245,163,0,0.45)]"
+                    className="absolute top-[38%] sm:top-[38%] right-2 sm:right-3 lg:right-4 z-10 flex items-center justify-center w-10 h-10 sm:w-20 sm:h-20 md:w-24 md:h-24 rounded-full bg-brand-navy-dark/90 backdrop-blur-xl border border-brand-gold sm:border-2 p-1 sm:p-1.5 shadow-[0_0_20px_rgba(245,163,0,0.35)]"
                 >
-                    <div className="w-full h-full rounded-full border border-brand-gold/50 flex items-center justify-center bg-gradient-to-b from-brand-navy via-[#001c54] to-slate-950 text-brand-gold">
-                        <TbChartCandle className="text-2xl sm:text-3xl md:text-4xl drop-shadow-[0_0_12px_rgba(245,163,0,0.85)]" />
+                    <div className="w-full h-full rounded-full border border-brand-gold/40 flex items-center justify-center bg-linear-to-b from-brand-navy via-brand-navy-dark to-slate-950 text-brand-gold">
+                        <TbChartCandle className="text-base sm:text-3xl md:text-4xl drop-shadow-[0_0_10px_rgba(245,163,0,0.85)]" />
                     </div>
                 </motion.div>
 
@@ -196,7 +201,7 @@ export default function Hero() {
                                 repeatDelay: 3.3,
                                 ease: [0.25, 1, 0.5, 1],
                             }}
-                            className="inline-block bg-gradient-to-r from-brand-gold to-amber-500 bg-clip-text text-transparent will-change-transform"
+                            className="inline-block bg-linear-to-r from-brand-gold to-amber-500 bg-clip-text text-transparent will-change-transform"
                         >
                             TRADE
                         </motion.span>
@@ -284,19 +289,19 @@ export default function Hero() {
                         {/* Button 1: OUR COURSES (Yellow Background) */}
                         <Link
                             href="/courses"
-                            className="group relative w-full max-w-[280px] sm:max-w-none sm:w-auto inline-flex items-center justify-center gap-2.5 sm:gap-3 px-6 sm:px-10 py-3.5 sm:py-4.5 rounded-full text-sm sm:text-lg font-bold text-slate-950 bg-gradient-to-r from-brand-gold via-amber-400 to-brand-gold hover:from-amber-400 hover:to-brand-gold shadow-[0_4px_24px_rgba(245,163,0,0.4)] hover:shadow-[0_8px_32px_rgba(245,163,0,0.55)] transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] uppercase tracking-wide"
+                            className="group relative w-full max-w-[280px] sm:max-w-none sm:w-auto inline-flex items-center justify-center gap-2.5 sm:gap-3 px-6 sm:px-10 py-3.5 sm:py-4.5 rounded-full text-sm sm:text-lg font-bold text-slate-950 bg-linear-to-r from-brand-gold via-amber-400 to-brand-gold hover:from-amber-400 hover:to-brand-gold shadow-[0_4px_24px_rgba(245,163,0,0.4)] hover:shadow-[0_8px_32px_rgba(245,163,0,0.55)] transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] uppercase tracking-wide"
                         >
                             <span>OUR COURSES</span>
                             <HiOutlineArrowRight className="text-base sm:text-lg transition-transform duration-300 group-hover:translate-x-1.5" />
 
                             {/* Shimmer reflection */}
-                            <div className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/40 to-transparent group-hover:animate-[shimmer_1.5s_infinite]" />
+                            <div className="absolute inset-0 -translate-x-full bg-linear-to-r from-transparent via-white/40 to-transparent group-hover:animate-[shimmer_1.5s_infinite]" />
                         </Link>
 
                         {/* Button 2: APPLY TODAY (Blue Background) */}
                         <Link
                             href="/enrollment"
-                            className="group relative w-full max-w-[280px] sm:max-w-none sm:w-auto inline-flex items-center justify-center gap-2.5 sm:gap-3 px-6 sm:px-10 py-3.5 sm:py-4.5 rounded-full text-sm sm:text-lg font-bold text-white bg-gradient-to-r from-brand-navy via-blue-900 to-brand-navy hover:from-brand-navy-hover hover:to-brand-navy shadow-[0_4px_24px_rgba(0,43,127,0.35)] hover:shadow-[0_8px_32px_rgba(0,43,127,0.5)] transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] border border-white/15 uppercase tracking-wide"
+                            className="group relative w-full max-w-[280px] sm:max-w-none sm:w-auto inline-flex items-center justify-center gap-2.5 sm:gap-3 px-6 sm:px-10 py-3.5 sm:py-4.5 rounded-full text-sm sm:text-lg font-bold text-white bg-linear-to-r from-brand-navy via-blue-900 to-brand-navy hover:from-brand-navy-hover hover:to-brand-navy shadow-[0_4px_24px_rgba(0,43,127,0.35)] hover:shadow-[0_8px_32px_rgba(0,43,127,0.5)] transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] border border-white/15 uppercase tracking-wide"
                         >
                             <span>APPLY TODAY</span>
                             <HiOutlineArrowRight className="text-base sm:text-lg text-brand-gold transition-transform duration-300 group-hover:translate-x-1.5" />
@@ -310,7 +315,7 @@ export default function Hero() {
                         transition={{ duration: 0.6, delay: 0.45 }}
                         className="w-full max-w-7xl mx-auto"
                     >
-                        <div className="rounded-3xl bg-gradient-to-r from-brand-gold via-amber-400 to-brand-gold border border-amber-300 shadow-[0_16px_50px_rgba(245,163,0,0.3)] p-6 sm:p-8 lg:p-10 relative overflow-hidden">
+                        <div className="rounded-3xl bg-linear-to-r from-brand-gold via-amber-400 to-brand-gold border border-amber-300 shadow-[0_16px_50px_rgba(245,163,0,0.3)] p-6 sm:p-8 lg:p-10 relative overflow-hidden">
                             {/* Subtle background shimmer pattern */}
                             <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_50%,rgba(255,255,255,0.25),transparent_60%)] pointer-events-none" />
 
@@ -322,16 +327,16 @@ export default function Hero() {
                                             key={idx}
                                             className="flex flex-col items-center text-center px-4 sm:px-6 lg:px-8 group"
                                         >
-                                            <div className="w-12 h-12 rounded-2xl bg-[#001c54] text-brand-gold flex items-center justify-center text-xl mb-3 shadow-md group-hover:scale-110 transition-transform duration-200">
+                                            <div className="w-12 h-12 rounded-2xl bg-brand-navy-dark text-brand-gold flex items-center justify-center text-xl mb-3 shadow-md group-hover:scale-110 transition-transform duration-200">
                                                 <Icon />
                                             </div>
-                                            <div className="text-2xl sm:text-3xl lg:text-4xl font-black text-[#001c54] tracking-tight mb-1">
+                                            <div className="text-2xl sm:text-3xl lg:text-4xl font-black text-brand-navy-dark tracking-tight mb-1">
                                                 {item.value}
                                             </div>
                                             <div className="text-sm sm:text-base font-bold text-brand-navy mb-0.5">
                                                 {item.label}
                                             </div>
-                                            <div className="text-xs sm:text-sm font-semibold text-[#001c54]/80">
+                                            <div className="text-xs sm:text-sm font-semibold text-brand-navy-dark/80">
                                                 {item.detail}
                                             </div>
                                         </div>

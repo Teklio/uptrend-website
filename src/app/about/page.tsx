@@ -4,19 +4,8 @@ import React from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { motion } from "framer-motion";
-import {
-  HiOutlineArrowRight,
-  HiOutlineCheckCircle,
-  HiOutlineTranslate,
-} from "react-icons/hi";
-import {
-  FiLayers,
-  FiCpu,
-  FiBarChart2,
-  FiShield,
-  FiAward,
-} from "react-icons/fi";
-import MarqueeBanner from "@/components/MarqueeBanner";
+import { HiOutlineArrowRight } from "react-icons/hi";
+import { FiLayers, FiCpu, FiBarChart2, FiShield } from "react-icons/fi";
 
 const methodologyPillars = [
   {
@@ -93,16 +82,13 @@ export default function AboutPage() {
         </div>
       </section>
 
-      {/* MARQUEE BANNER */}
-      <MarqueeBanner />
-
       {/* 2. OUR STORY & FOUNDATION */}
       <section className="py-16 sm:py-24 bg-white">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 md:grid-cols-12 gap-10 items-center">
             {/* Visual Image */}
             <div className="md:col-span-5 relative">
-              <div className="relative aspect-[4/3] w-full rounded-2xl overflow-hidden bg-slate-100 border border-slate-200/80 shadow-sm">
+              <div className="relative aspect-4/3 w-full rounded-2xl overflow-hidden bg-slate-100 border border-slate-200/80 shadow-sm">
                 <Image
                   src="/about-lab.jpg"
                   alt="UPtrend Mentorship Lab"
@@ -154,7 +140,7 @@ export default function AboutPage() {
               </p>
             </div>
 
-            <div className="relative aspect-[16/10] w-full rounded-2xl overflow-hidden bg-slate-900 border border-slate-200 shadow-sm">
+            <div className="relative aspect-16/10 w-full rounded-2xl overflow-hidden bg-slate-900 border border-slate-200 shadow-sm">
               <Image
                 src="/about-methodology.jpg"
                 alt="Institutional Market Behavior Analytics"
@@ -273,7 +259,7 @@ export default function AboutPage() {
             {/* Button 1: OUR COURSES (Yellow) */}
             <Link
               href="/courses"
-              className="group relative w-full sm:w-auto inline-flex items-center justify-center gap-3 px-10 py-4 rounded-full text-base font-bold text-slate-950 bg-gradient-to-r from-brand-gold via-amber-400 to-brand-gold hover:from-amber-400 hover:to-brand-gold shadow-md transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] uppercase tracking-wide"
+              className="group relative w-full sm:w-auto inline-flex items-center justify-center gap-3 px-10 py-4 rounded-full text-base font-bold text-slate-950 bg-linear-to-r from-brand-gold via-amber-400 to-brand-gold hover:from-amber-400 hover:to-brand-gold shadow-md transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] uppercase tracking-wide"
             >
               <span>OUR COURSES</span>
               <HiOutlineArrowRight className="text-lg transition-transform duration-300 group-hover:translate-x-1.5" />

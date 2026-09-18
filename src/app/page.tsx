@@ -1,5 +1,5 @@
 import Hero from "@/components/Hero";
-import MarqueeBanner from "@/components/MarqueeBanner";
+import LiveMarketTicker from "@/components/LiveMarketTicker";
 import About from "@/components/About";
 import Testimonials from "@/components/Testimonials";
 
@@ -7,9 +7,10 @@ export default function Home() {
   return (
     <div className="w-full">
       <Hero />
-      <MarqueeBanner />
+      <LiveMarketTicker />
       <About />
       <Testimonials />
     </div>
   );
 }
+
