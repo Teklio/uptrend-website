@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState, useRef, useCallback } from "react";
+import React, { useEffect, useState, useRef, useCallback, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   FiTrendingUp,
@@ -326,6 +326,20 @@ function WhiteThemeChartModal({
   const containerRef = useRef<HTMLDivElement>(null);
   const isUp = item.change >= 0;
 
+  const symbolOptions = useMemo(() => {
+    if (item.category === "Indian Indices") {
+      return [
+        { label: "MSCI India (INDA)", symbol: "AMEX:INDA" },
+        { label: "Nifty 50 (NSE)", symbol: "NSE:NIFTY" },
+        { label: "BSE Sensex", symbol: "BSE:SENSEX" },
+      ];
+    }
+    return [{ label: item.name, symbol: item.tradingViewSymbol }];
+  }, [item]);
+
+  const [selectedSymbol, setSelectedSymbol] = useState(symbolOptions[0].symbol);
+  const directSymbol = item.category === "Indian Indices" ? "NSE:NIFTY" : item.tradingViewSymbol;
+
   useEffect(() => {
     if (!containerRef.current) return;
 
@@ -337,7 +351,7 @@ function WhiteThemeChartModal({
     script.async = true;
     script.innerHTML = JSON.stringify({
       autosize: true,
-      symbol: item.tradingViewSymbol,
+      symbol: selectedSymbol,
       interval: "D",
       timezone: "Etc/UTC",
       theme: "light",
@@ -347,14 +361,14 @@ function WhiteThemeChartModal({
       backgroundColor: "#ffffff",
       gridColor: "rgba(0, 0, 0, 0.05)",
       hide_side_toolbar: false,
-      allow_symbol_change: false,
+      allow_symbol_change: true,
       save_image: true,
       calendar: false,
       hide_volume: false,
     });
 
     containerRef.current.appendChild(script);
-  }, [item.tradingViewSymbol]);
+  }, [selectedSymbol]);
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-slate-900/60 backdrop-blur-sm">
@@ -365,7 +379,7 @@ function WhiteThemeChartModal({
         className="relative w-full max-w-5xl h-[85vh] bg-white border border-slate-200 rounded-2xl shadow-2xl flex flex-col overflow-hidden"
       >
         {/* Modal Header */}
-        <div className="flex items-center justify-between px-5 py-3.5 border-b border-slate-200 bg-slate-50/80">
+        <div className="flex flex-wrap items-center justify-between px-5 py-3.5 border-b border-slate-200 bg-slate-50/80 gap-2">
           <div className="flex items-center gap-3">
             <div>
               <div className="flex items-center gap-2">
@@ -391,7 +405,35 @@ function WhiteThemeChartModal({
             </div>
           </div>
 
+          {/* Symbol Selector Pills for Indian Indices */}
+          {symbolOptions.length > 1 && (
+            <div className="flex items-center gap-1.5 bg-slate-200/80 p-1 rounded-xl border border-slate-300/60">
+              {symbolOptions.map((opt) => (
+                <button
+                  key={opt.symbol}
+                  onClick={() => setSelectedSymbol(opt.symbol)}
+                  className={`px-3 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                    selectedSymbol === opt.symbol
+                      ? "bg-[#002b7f] text-white shadow-xs"
+                      : "text-slate-700 hover:text-slate-900 hover:bg-white/60"
+                  }`}
+                >
+                  {opt.label}
+                </button>
+              ))}
+            </div>
+          )}
+
           <div className="flex items-center gap-2">
+            <a
+              href={`https://www.tradingview.com/chart/?symbol=${encodeURIComponent(directSymbol)}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-xs font-semibold text-white transition-colors"
+            >
+              <FiExternalLink className="text-xs text-white" />
+              <span className="hidden sm:inline">TradingView</span>
+            </a>
             <a
               href={`https://finance.yahoo.com/quote/${encodeURIComponent(item.symbol)}`}
               target="_blank"

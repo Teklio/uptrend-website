@@ -1,42 +1,43 @@
 "use client";
 
-import React from "react";
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { HiOutlineArrowRight } from "react-icons/hi";
-import { FiTrendingUp, FiTarget, FiLayers, FiCpu } from "react-icons/fi";
+import { FiTrendingUp } from "react-icons/fi";
 import { BsCurrencyExchange } from "react-icons/bs";
 import { TbChartCandle } from "react-icons/tb";
 
-const features = [
+const featurePhrases = [
     {
-        icon: FiTarget,
-        value: "1:3+ Min",
-        label: "Risk-to-Reward Focus",
-        detail: "Strict Capital Preservation",
+        line1: "TRADE WITH",
+        line2: "KNOWLEDGE.",
     },
     {
-        icon: FiLayers,
-        value: "100%",
-        label: "Objective Data",
-        detail: "SMC & Order Flow Mechanics",
+        line1: "READ PRICE.",
+        line2: "UNDERSTAND VOLUME.",
     },
     {
-        icon: FiTrendingUp,
-        value: "4 Markets",
-        label: "Comprehensive Breadth",
-        detail: "Nifty, Futures, Equities & Forex",
+        line1: "BUILD A",
+        line2: "TRADING SYSTEM.",
     },
     {
-        icon: FiCpu,
-        value: "1-on-1",
-        label: "Live Mentorship",
-        detail: "English & Malayalam Sessions",
+        line1: "MANAGE RISK.",
+        line2: "PROTECT CAPITAL.",
     },
 ];
 
 export default function Hero() {
+    const [currentPhraseIndex, setCurrentPhraseIndex] = useState(0);
+
+    useEffect(() => {
+        const interval = setInterval(() => {
+            setCurrentPhraseIndex((prev) => (prev + 1) % featurePhrases.length);
+        }, 3400);
+        return () => clearInterval(interval);
+    }, []);
+
     return (
         <section className="relative overflow-hidden pt-10 pb-16 sm:pt-16 sm:pb-24 lg:pt-20 lg:pb-28 bg-linear-to-b from-white via-slate-50/60 to-white">
             {/* Background Image (hero_bg.png) with Exact Top White Fade Match */}
@@ -308,40 +309,49 @@ export default function Hero() {
                         </Link>
                     </motion.div>
 
-                    {/* Wide-Screen Expanded Framework Strip */}
+                    {/* Wide-Screen Expanded Framework Strip with Single-Line Animated Word Showcase */}
                     <motion.div
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ duration: 0.6, delay: 0.45 }}
                         className="w-full max-w-7xl mx-auto"
                     >
-                        <div className="rounded-3xl bg-linear-to-r from-brand-gold via-amber-400 to-brand-gold border border-amber-300 shadow-[0_16px_50px_rgba(245,163,0,0.3)] p-6 sm:p-8 lg:p-10 relative overflow-hidden">
+                        <div className="rounded-3xl bg-linear-to-r from-brand-gold via-amber-400 to-brand-gold border border-amber-300 shadow-[0_16px_50px_rgba(245,163,0,0.3)] p-6 sm:p-10 relative overflow-hidden flex flex-col items-center justify-center min-h-[140px] sm:min-h-[170px]">
                             {/* Subtle background shimmer pattern */}
-                            <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_50%,rgba(255,255,255,0.25),transparent_60%)] pointer-events-none" />
+                            <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_50%,rgba(255,255,255,0.3),transparent_60%)] pointer-events-none" />
 
-                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 sm:gap-8 lg:gap-0 lg:divide-x lg:divide-brand-navy/20 relative z-10">
-                                {features.map((item, idx) => {
-                                    const Icon = item.icon;
-                                    return (
-                                        <div
-                                            key={idx}
-                                            className="flex flex-col items-center text-center px-4 sm:px-6 lg:px-8 group"
-                                        >
-                                            <div className="w-12 h-12 rounded-2xl bg-brand-navy-dark text-brand-gold flex items-center justify-center text-xl mb-3 shadow-md group-hover:scale-110 transition-transform duration-200">
-                                                <Icon />
-                                            </div>
-                                            <div className="text-2xl sm:text-3xl lg:text-4xl font-black text-brand-navy-dark tracking-tight mb-1">
-                                                {item.value}
-                                            </div>
-                                            <div className="text-sm sm:text-base font-bold text-brand-navy mb-0.5">
-                                                {item.label}
-                                            </div>
-                                            <div className="text-xs sm:text-sm font-semibold text-brand-navy-dark/80">
-                                                {item.detail}
-                                            </div>
-                                        </div>
-                                    );
-                                })}
+                            <AnimatePresence mode="wait">
+                                <motion.div
+                                    key={currentPhraseIndex}
+                                    initial={{ opacity: 0, y: 22, scale: 0.96 }}
+                                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                                    exit={{ opacity: 0, y: -22, scale: 0.96 }}
+                                    transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+                                    className="relative z-10 flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-4 text-center select-none w-full"
+                                >
+                                    <span className="text-2xl sm:text-4xl md:text-5xl lg:text-6xl font-black text-brand-navy uppercase tracking-tight">
+                                        {featurePhrases[currentPhraseIndex].line1}
+                                    </span>
+                                    <span className="text-2xl sm:text-4xl md:text-5xl lg:text-6xl font-black text-brand-navy-dark uppercase tracking-tight">
+                                        {featurePhrases[currentPhraseIndex].line2}
+                                    </span>
+                                </motion.div>
+                            </AnimatePresence>
+
+                            {/* Phrase Progress Indicators */}
+                            <div className="flex items-center justify-center gap-2 mt-4 sm:mt-6 relative z-10">
+                                {featurePhrases.map((_, idx) => (
+                                    <button
+                                        key={idx}
+                                        onClick={() => setCurrentPhraseIndex(idx)}
+                                        aria-label={`Go to phrase ${idx + 1}`}
+                                        className={`h-1.5 rounded-full transition-all duration-500 cursor-pointer ${
+                                            idx === currentPhraseIndex
+                                                ? "w-8 sm:w-10 bg-brand-navy"
+                                                : "w-2 bg-brand-navy/30 hover:bg-brand-navy/60"
+                                        }`}
+                                    />
+                                ))}
                             </div>
                         </div>
                     </motion.div>
