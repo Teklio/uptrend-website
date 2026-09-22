@@ -1,4 +1,14 @@
 import Link from "next/link";
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "Disclaimer & Risk Disclosure",
+  description:
+    "Important risk disclosure and educational disclaimer from UPtrend Financial Academy. Trading in equities, options, and forex involves financial risk.",
+  alternates: {
+    canonical: "https://uptrendfinacademy.com/disclaimer",
+  },
+};
 
 export default function DisclaimerPage() {
   return (
