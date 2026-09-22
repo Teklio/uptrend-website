@@ -1,13 +1,45 @@
 import type { Metadata } from "next";
 
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://uptrendfinacademy.com";
+
 export const metadata: Metadata = {
-  title: "Enrollment & Admission",
+  title: "Course Enrollment & Admissions | UPtrend Trading Academy",
   description:
-    "Apply for upcoming mentorship cohorts at UPtrend Financial Academy. Instant fee calculation and secure seat registration.",
+    "Enroll in UPtrend Trading Academy programs. Secure your cohort seat for institutional Smart Money Concepts (SMC), Nifty Options, and Swing Trading mentorship in Perinthalmanna, Kerala.",
+  keywords: [
+    "uptrend enrollment",
+    "trading course registration",
+    "trading academy perinthalmanna",
+    "Uptrend Trading academy perinthalmanna",
+    "Uptrendfinacademy enrollment",
+    "uptrendacademy admission",
+    "stock market course admission kerala",
+  ],
+  alternates: {
+    canonical: `${siteUrl}/enrollment`,
+  },
   openGraph: {
-    title: "Course Enrollment | UPtrend Financial Academy",
+    type: "website",
+    locale: "en_IN",
+    url: `${siteUrl}/enrollment`,
+    title: "Enroll Now | UPtrend Trading Academy Perinthalmanna",
     description:
-      "Register your seat in our live trading cohorts across Equities, Options, and Forex.",
+      "Join the upcoming cohort at UPtrend Trading Academy. Structured institutional education and live mentorship in Malayalam & English.",
+    siteName: "UPtrend Financial Academy",
+    images: [
+      {
+        url: `${siteUrl}/about-lab.jpg`,
+        width: 1200,
+        height: 630,
+        alt: "Enroll at UPtrend Trading Academy",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Course Enrollment | UPtrend Trading Academy",
+    description: "Reserve your seat for live trading mentorship at UPtrend Perinthalmanna.",
+    images: [`${siteUrl}/about-lab.jpg`],
   },
 };
 
