@@ -33,7 +33,7 @@ const INSTRUMENT_CONFIGS = [
     name: "Nifty MidSmallCap 400",
     category: "Indian Indices" as const,
     currency: "₹",
-    tradingViewSymbol: "NSE:NIFTY",
+    tradingViewSymbol: "AMEX:INDA",
   },
   {
     id: "nifty-midcap-100",
@@ -41,7 +41,7 @@ const INSTRUMENT_CONFIGS = [
     name: "Nifty MidCap 100",
     category: "Indian Indices" as const,
     currency: "₹",
-    tradingViewSymbol: "NSE:NIFTYMIDCAP100",
+    tradingViewSymbol: "AMEX:INDA",
   },
   {
     id: "nifty-smallcap-100",
@@ -49,7 +49,7 @@ const INSTRUMENT_CONFIGS = [
     name: "Nifty SmallCap 100",
     category: "Indian Indices" as const,
     currency: "₹",
-    tradingViewSymbol: "NSE:CNXSMALLCAP",
+    tradingViewSymbol: "AMEX:INDA",
   },
   {
     id: "xauusd",
@@ -105,7 +105,7 @@ const INSTRUMENT_CONFIGS = [
     name: "Indian Rupee / US Dollar",
     category: "Forex" as const,
     currency: "₹",
-    tradingViewSymbol: "FX:USDINR",
+    tradingViewSymbol: "FX_IDC:USDINR",
   },
 ];
 
