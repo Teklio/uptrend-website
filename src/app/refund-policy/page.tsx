@@ -1,4 +1,14 @@
 import Link from "next/link";
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "Refund & Cancellation Policy",
+  description:
+    "Review UPtrend Financial Academy's terms on course enrollments, cohort seat reservations, and refund policies.",
+  alternates: {
+    canonical: "https://uptrendfinacademy.com/refund-policy",
+  },
+};
 
 export default function RefundPolicyPage() {
   return (

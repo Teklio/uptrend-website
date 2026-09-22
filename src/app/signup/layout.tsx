@@ -1,9 +1,9 @@
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Uptrend Account",
+  title: "Create Student Account | UPtrend Trading Academy",
   description:
-    "Register for a student account at UPtrend Financial Academy to access institutional trading curricula, trade journals, and community discussions.",
+    "Register for a student account to enroll in institutional trading courses and live cohorts at UPtrend Trading Academy.",
   robots: {
     index: false,
     follow: true,
