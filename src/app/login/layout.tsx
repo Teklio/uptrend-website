@@ -1,9 +1,9 @@
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Student Portal Login | UPtrend Trading Academy",
+  title: "Student Portal Login | UPtrend Fin Academy",
   description:
-    "Sign in to access your enrolled courses, live cohorts, and trading education materials at UPtrend Trading Academy.",
+    "Sign in to access your enrolled courses, live cohorts, and trading education materials at UPtrend Fin Academy.",
   robots: {
     index: false,
     follow: true,

@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Reset Password | UPtrend Trading Academy",
+  title: "Reset Password | UPtrend Fin Academy",
   robots: {
     index: false,
     follow: false,
