@@ -1,12 +1,14 @@
 import Link from "next/link";
 import type { Metadata } from "next";
 
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://www.uptrendfinacademy.com";
+
 export const metadata: Metadata = {
   title: "Privacy Policy",
   description:
     "Read UPtrend Financial Academy's Privacy Policy, detailing our data protection protocols, user confidentiality, and student information safety standards.",
   alternates: {
-    canonical: "https://uptrendfinacademy.com/privacy-policy",
+    canonical: `${siteUrl}/privacy-policy`,
   },
 };
 
