@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Verify Email | UPtrend Trading Academy",
+  title: "Verify Email | UPtrend Fin Academy",
   robots: {
     index: false,
     follow: false,

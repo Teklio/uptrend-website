@@ -3,16 +3,19 @@ import type { Metadata } from "next";
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://uptrendfinacademy.com";
 
 export const metadata: Metadata = {
-  title: "Course Enrollment & Admissions | UPtrend Trading Academy",
+  title: "Course Enrollment & Admissions | UPtrend Fin & Trading Academy",
   description:
-    "Enroll in UPtrend Trading Academy programs. Secure your cohort seat for institutional Smart Money Concepts (SMC), Nifty Options, and Swing Trading mentorship in Perinthalmanna, Kerala.",
+    "Enroll in UPtrend Fin & Trading Academy programs. Secure your cohort seat for Smart Money Concepts (SMC), Nifty Options, and Swing Trading mentorship in Perinthalmanna, Kerala.",
   keywords: [
     "uptrend enrollment",
+    "uptrendfinacademy enrollment",
+    "uptrend fin academy",
+    "uptrend trading academy",
+    "UPtrend Fin & Trading Academy",
+    "UPtrend Fin Academy",
+    "UPtrend Trading Academy",
     "trading course registration",
     "trading academy perinthalmanna",
-    "Uptrend Trading academy perinthalmanna",
-    "Uptrendfinacademy enrollment",
-    "uptrendacademy admission",
     "stock market course admission kerala",
   ],
   alternates: {
@@ -22,23 +25,23 @@ export const metadata: Metadata = {
     type: "website",
     locale: "en_IN",
     url: `${siteUrl}/enrollment`,
-    title: "Enroll Now | UPtrend Trading Academy Perinthalmanna",
+    title: "Enroll Now | UPtrend Fin & Trading Academy Perinthalmanna",
     description:
-      "Join the upcoming cohort at UPtrend Trading Academy. Structured institutional education and live mentorship in Malayalam & English.",
-    siteName: "UPtrend Financial Academy",
+      "Join the upcoming cohort at UPtrend Fin & Trading Academy. Structured education and live mentorship in Malayalam & English.",
+    siteName: "UPtrend Fin & Trading Academy",
     images: [
       {
         url: `${siteUrl}/about-lab.jpg`,
         width: 1200,
         height: 630,
-        alt: "Enroll at UPtrend Trading Academy",
+        alt: "Enroll at UPtrend Fin & Trading Academy",
       },
     ],
   },
   twitter: {
     card: "summary_large_image",
-    title: "Course Enrollment | UPtrend Trading Academy",
-    description: "Reserve your seat for live trading mentorship at UPtrend Perinthalmanna.",
+    title: "Course Enrollment | UPtrend Fin & Trading Academy",
+    description: "Reserve your seat for live trading mentorship at UPtrend Fin & Trading Academy Perinthalmanna.",
     images: [`${siteUrl}/about-lab.jpg`],
   },
 };

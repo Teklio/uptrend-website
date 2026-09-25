@@ -32,10 +32,10 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   const course = await fetchCourseData(slug);
 
   if (course) {
-    const title = `${course.name} | UPtrend Trading Academy`;
+    const title = `${course.name} | UPtrend Fin & Trading Academy`;
     const description =
       course.description ||
-      `Enroll in ${course.name} at UPtrend Trading Academy Perinthalmanna. Master institutional Smart Money Concepts (SMC), order flow, and risk management with live mentorship.`;
+      `Enroll in ${course.name} at UPtrend Fin & Trading Academy Perinthalmanna. Master Smart Money Concepts (SMC), order flow, and risk management with live mentorship.`;
     const image = course.primaryImageUrl || `${siteUrl}/course-swing-trading.jpg`;
 
     return {
@@ -43,11 +43,13 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
       description,
       keywords: [
         course.name,
+        "uptrendfinacademy",
+        "uptrend fin academy",
         "uptrend trading academy",
+        "UPtrend Fin & Trading Academy",
+        "UPtrend Fin Academy",
+        "UPtrend Trading Academy",
         "trading academy perinthalmanna",
-        "Uptrend Trading academy perinthalmanna",
-        "Uptrendfinacademy",
-        "uptrendacademy",
         "stock market course perinthalmanna",
         "smc trading course kerala",
         `${course.name} malayalam`,
@@ -62,7 +64,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
         url: `${siteUrl}/courses/${slug}`,
         title,
         description,
-        siteName: "UPtrend Financial Academy",
+        siteName: "UPtrend Fin & Trading Academy",
         images: [{ url: image, alt: course.name }],
       },
       twitter: {
@@ -75,9 +77,9 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   }
 
   return {
-    title: "Trading Course Details | UPtrend Trading Academy Perinthalmanna",
+    title: "Trading Course Details | UPtrend Fin & Trading Academy Perinthalmanna",
     description:
-      "Master institutional trading strategies, SMC order flow, and capital preservation protocols at UPtrend Trading Academy Perinthalmanna.",
+      "Master institutional trading strategies, SMC order flow, and capital preservation protocols at UPtrend Fin & Trading Academy Perinthalmanna.",
     alternates: {
       canonical: `${siteUrl}/courses/${slug}`,
     },

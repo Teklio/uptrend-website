@@ -154,6 +154,19 @@ export default function Hero() {
                 </motion.div>
 
                 <div className="flex flex-col items-center text-center">
+                    {/* SEO Brand Badge */}
+                    <motion.div
+                        initial={{ opacity: 0, y: -10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.5 }}
+                        className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/90 border border-slate-200 shadow-xs mb-6 backdrop-blur-sm"
+                    >
+                        <span className="w-2 h-2 rounded-full bg-brand-gold animate-pulse" />
+                        <span className="text-xs sm:text-sm font-bold tracking-wider text-slate-800 uppercase">
+                            UPtrend Fin &amp; Trading Academy • Stock Market Institute Perinthalmanna
+                        </span>
+                    </motion.div>
+
                     {/* Full-Width Bold Headline with Sequential Vertical Bounce Wave Animation */}
                     <h1 className="text-4xl sm:text-6xl md:text-7xl lg:text-8xl font-black tracking-tight text-slate-950 leading-[1.1] max-w-5xl mb-8 uppercase select-none">
                         {/* 1. Word: LEARN */}
