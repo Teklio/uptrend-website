@@ -1,12 +1,14 @@
 import Link from "next/link";
 import type { Metadata } from "next";
 
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://www.uptrendfinacademy.com";
+
 export const metadata: Metadata = {
   title: "Refund & Cancellation Policy",
   description:
     "Review UPtrend Financial Academy's terms on course enrollments, cohort seat reservations, and refund policies.",
   alternates: {
-    canonical: "https://uptrendfinacademy.com/refund-policy",
+    canonical: `${siteUrl}/refund-policy`,
   },
 };
 
