@@ -7,7 +7,7 @@ interface CourseItem {
 }
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://uptrendfinacademy.com";
+  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://www.uptrendfinacademy.com";
   const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5005/v1";
 
   const staticRoutes: MetadataRoute.Sitemap = [

@@ -5,7 +5,7 @@ interface LayoutProps {
   params: Promise<{ slug: string }>;
 }
 
-const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://uptrendfinacademy.com";
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://www.uptrendfinacademy.com";
 const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5005/v1";
 
 async function fetchCourseData(slug: string) {

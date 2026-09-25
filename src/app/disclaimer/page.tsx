@@ -1,12 +1,14 @@
 import Link from "next/link";
 import type { Metadata } from "next";
 
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://www.uptrendfinacademy.com";
+
 export const metadata: Metadata = {
   title: "Disclaimer & Risk Disclosure",
   description:
     "Important risk disclosure and educational disclaimer from UPtrend Financial Academy. Trading in equities, options, and forex involves financial risk.",
   alternates: {
-    canonical: "https://uptrendfinacademy.com/disclaimer",
+    canonical: `${siteUrl}/disclaimer`,
   },
 };
 
