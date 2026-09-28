@@ -169,6 +169,7 @@ export default function Hero() {
 
                     {/* Full-Width Bold Headline with Sequential Vertical Bounce Wave Animation */}
                     <h1 className="text-4xl sm:text-6xl md:text-7xl lg:text-8xl font-black tracking-tight text-slate-950 leading-[1.1] max-w-5xl mb-8 uppercase select-none">
+                        <span className="sr-only">UPtrend Fin Academy - Stock Market &amp; Trading Institute Perinthalmanna - </span>
                         {/* 1. Word: LEARN */}
                         <motion.span
                             animate={{
