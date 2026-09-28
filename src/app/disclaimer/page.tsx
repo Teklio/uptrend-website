@@ -10,6 +10,10 @@ export const metadata: Metadata = {
   alternates: {
     canonical: `${siteUrl}/disclaimer`,
   },
+  robots: {
+    index: false,
+    follow: true,
+  },
 };
 
 export default function DisclaimerPage() {
