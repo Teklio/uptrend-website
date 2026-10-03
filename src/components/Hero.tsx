@@ -163,7 +163,7 @@ export default function Hero() {
                     >
                         <span className="w-2 h-2 rounded-full bg-brand-gold animate-pulse" />
                         <span className="text-xs sm:text-sm font-bold tracking-wider text-slate-800 uppercase">
-                            UPtrend Fin &amp; Trading Academy • Stock Market Institute Perinthalmanna
+                            UPtrend Fin Academy | Trading Academy in Perinthalmanna
                         </span>
                     </motion.div>
 
